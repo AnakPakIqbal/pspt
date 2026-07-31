@@ -63,11 +63,11 @@ Scans one or more git repositories and writes the results as a single JSON
 file. Replaces the old ad hoc `docs/scan-commits.js` / `docs/scan-agentic-repos.js`
 scripts from the original codebase.
 
-| Flag | Default | Meaning |
-|---|---|---|
-| `--since <date>` | (all history) | Passed straight to `git log --since=<date>` (e.g. `2026-01-01`). |
-| `--out <file>` | `scan-git.json` | Output JSON path. |
-| `--with-lines` | off | Also run `git show --shortstat` **per commit** to attach `{insertions, deletions}` to each entry. Costs one extra git process per commit — fine for tens/hundreds of commits, slow for very large histories. Omit it if you only need commit metadata (hash/date/author/subject). |
+| Flag             | Default         | Meaning                                                                                                                                                                                                                                                                           |
+| ---------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--since <date>` | (all history)   | Passed straight to `git log --since=<date>` (e.g. `2026-01-01`).                                                                                                                                                                                                                  |
+| `--out <file>`   | `scan-git.json` | Output JSON path.                                                                                                                                                                                                                                                                 |
+| `--with-lines`   | off             | Also run `git show --shortstat` **per commit** to attach `{insertions, deletions}` to each entry. Costs one extra git process per commit — fine for tens/hundreds of commits, slow for very large histories. Omit it if you only need commit metadata (hash/date/author/subject). |
 
 Multiple repo paths can be passed at once; each becomes its own entry in the
 output array, named after the repo's directory basename:
@@ -93,11 +93,11 @@ pspt scan-git ../project-tracker ../project-tracker-api --since 2026-01-01 \
       "author": "Jane Doe",
       "email": "<jane@example.com>",
       "subject": "refactor: remove unused assignees handling functions",
-      "insertions": 3,   // only present with --with-lines
-      "deletions": 63    // only present with --with-lines
-    }
+      "insertions": 3, // only present with --with-lines
+      "deletions": 63, // only present with --with-lines
+    },
   ],
-  "error": null // set instead of `commits` populating, if `git log` itself failed
+  "error": null, // set instead of `commits` populating, if `git log` itself failed
 }
 ```
 

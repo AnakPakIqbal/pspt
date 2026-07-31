@@ -6,13 +6,13 @@ DSL (`.pspt` files) so you can author specs/trackers without writing JS by hand.
 
 ## Packages
 
-| Package | Purpose | Docs |
-|---|---|---|
-| `pspt-core` | Shared design tokens, table/column-schema, placeholder rule, date/border/color helpers, git-scan utilities | (internal — no public docs, see source) |
-| `pspt-docx` | `ProductSpecSDK` — generates Word product-spec documents | [packages/pspt-docx/README.md](packages/pspt-docx/README.md) |
-| `pspt-xlsx` | `ExcelTrackerSDK` — generates Excel Gantt project trackers | [packages/pspt-xlsx/README.md](packages/pspt-xlsx/README.md) |
-| `pspt-lang` | The `.pspt` DSL — lexer/parser/codegen, compiles to plain JS | [packages/pspt-lang/README.md](packages/pspt-lang/README.md) |
-| `pspt-cli` | The `pspt` command-line tool: `compile`, `build`, `scan-git` | [packages/pspt-cli/README.md](packages/pspt-cli/README.md) |
+| Package     | Purpose                                                                                                    | Docs                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `pspt-core` | Shared design tokens, table/column-schema, placeholder rule, date/border/color helpers, git-scan utilities | (internal — no public docs, see source)                      |
+| `pspt-docx` | `ProductSpecSDK` — generates Word product-spec documents                                                   | [packages/pspt-docx/README.md](packages/pspt-docx/README.md) |
+| `pspt-xlsx` | `ExcelTrackerSDK` — generates Excel Gantt project trackers                                                 | [packages/pspt-xlsx/README.md](packages/pspt-xlsx/README.md) |
+| `pspt-lang` | The `.pspt` DSL — lexer/parser/codegen, compiles to plain JS                                               | [packages/pspt-lang/README.md](packages/pspt-lang/README.md) |
+| `pspt-cli`  | The `pspt` command-line tool: `compile`, `build`, `scan-git`                                               | [packages/pspt-cli/README.md](packages/pspt-cli/README.md)   |
 
 ## Install
 

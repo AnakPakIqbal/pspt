@@ -13,8 +13,22 @@
  */
 
 const KEYWORDS = new Set([
-  'doc', 'type', 'calendar', 'group', 'task', 'callout', 'section', 'table',
-  'rows', 'hardware', 'list', 'item', 'color', 'true', 'false', 'null',
+  'doc',
+  'type',
+  'calendar',
+  'group',
+  'task',
+  'callout',
+  'section',
+  'table',
+  'rows',
+  'hardware',
+  'list',
+  'item',
+  'color',
+  'true',
+  'false',
+  'null',
 ]);
 
 class LexError extends Error {
@@ -26,9 +40,15 @@ class LexError extends Error {
   }
 }
 
-function isDigit(ch) { return ch >= '0' && ch <= '9'; }
-function isIdentStart(ch) { return /[A-Za-z_]/.test(ch); }
-function isIdentPart(ch) { return /[A-Za-z0-9_]/.test(ch); }
+function isDigit(ch) {
+  return ch >= '0' && ch <= '9';
+}
+function isIdentStart(ch) {
+  return /[A-Za-z_]/.test(ch);
+}
+function isIdentPart(ch) {
+  return /\w/.test(ch);
+}
 
 /**
  * @param {string} source
@@ -43,18 +63,31 @@ function tokenize(source) {
 
   function advance(count = 1) {
     for (let k = 0; k < count; k++) {
-      if (source[i] === '\n') { line++; col = 1; } else { col++; }
+      if (source[i] === '\n') {
+        line++;
+        col = 1;
+      } else {
+        col++;
+      }
       i++;
     }
   }
 
-  function peek(offset = 0) { return source[i + offset]; }
+  function peek(offset = 0) {
+    return source[i + offset];
+  }
 
   while (i < n) {
     const ch = peek();
 
-    if (ch === '\n') { advance(); continue; }
-    if (ch === ' ' || ch === '\t' || ch === '\r') { advance(); continue; }
+    if (ch === '\n') {
+      advance();
+      continue;
+    }
+    if (ch === ' ' || ch === '\t' || ch === '\r') {
+      advance();
+      continue;
+    }
 
     if (ch === '#' || (ch === '/' && peek(1) === '/')) {
       while (i < n && peek() !== '\n') advance();
@@ -79,14 +112,19 @@ function tokenize(source) {
           advance();
         }
       }
-      if (i >= n) throw new LexError('Unterminated string literal (hit end of file)', startLine, startCol);
+      if (i >= n)
+        throw new LexError('Unterminated string literal (hit end of file)', startLine, startCol);
       advance(); // closing quote
       tokens.push({ type: 'string', value, line: startLine, col: startCol });
       continue;
     }
 
     // date literal: YYYY-MM-DD (must not be followed by more ident chars)
-    if (isDigit(ch) && /\d{4}-\d{2}-\d{2}/.test(source.slice(i, i + 10)) && !isIdentPart(source[i + 10] || '')) {
+    if (
+      isDigit(ch) &&
+      /\d{4}-\d{2}-\d{2}/.test(source.slice(i, i + 10)) &&
+      !isIdentPart(source[i + 10] || '')
+    ) {
       const value = source.slice(i, i + 10);
       advance(10);
       tokens.push({ type: 'date', value, line: startLine, col: startCol });
@@ -102,7 +140,10 @@ function tokenize(source) {
       while (lookahead < n && isDigit(source[lookahead])) lookahead++;
       if (lookahead < n && isIdentPart(source[lookahead]) && !isDigit(source[lookahead])) {
         let ident = '';
-        while (i < n && isIdentPart(peek())) { ident += peek(); advance(); }
+        while (i < n && isIdentPart(peek())) {
+          ident += peek();
+          advance();
+        }
         tokens.push({ type: 'ident', value: ident, line: startLine, col: startCol });
         continue;
       }
@@ -110,11 +151,21 @@ function tokenize(source) {
 
     if (isDigit(ch) || (ch === '-' && isDigit(peek(1)))) {
       let numStr = '';
-      if (ch === '-') { numStr += '-'; advance(); }
-      while (i < n && isDigit(peek())) { numStr += peek(); advance(); }
+      if (ch === '-') {
+        numStr += '-';
+        advance();
+      }
+      while (i < n && isDigit(peek())) {
+        numStr += peek();
+        advance();
+      }
       if (peek() === '.' && isDigit(peek(1))) {
-        numStr += '.'; advance();
-        while (i < n && isDigit(peek())) { numStr += peek(); advance(); }
+        numStr += '.';
+        advance();
+        while (i < n && isDigit(peek())) {
+          numStr += peek();
+          advance();
+        }
       }
       tokens.push({ type: 'number', value: Number(numStr), line: startLine, col: startCol });
       continue;
@@ -122,14 +173,20 @@ function tokenize(source) {
 
     if (isIdentStart(ch)) {
       let ident = '';
-      while (i < n && isIdentPart(peek())) { ident += peek(); advance(); }
+      while (i < n && isIdentPart(peek())) {
+        ident += peek();
+        advance();
+      }
       // `w2.5`-style weight suffixes: a decimal point immediately followed by
       // more ident chars extends the same token (e.g. `w2` + `.5` -> `w2.5`),
       // so `parseColumn`'s /^w\d+(\.\d+)?$/ check can match it as one ident.
       if (peek() === '.' && isDigit(peek(1))) {
         ident += '.';
         advance();
-        while (i < n && isIdentPart(peek())) { ident += peek(); advance(); }
+        while (i < n && isIdentPart(peek())) {
+          ident += peek();
+          advance();
+        }
       }
       if (KEYWORDS.has(ident)) {
         tokens.push({ type: ident, value: ident, line: startLine, col: startCol });

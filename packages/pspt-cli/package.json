@@ -28,7 +28,7 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=16.9.0"
   },
   "dependencies": {
     "pspt-core": "^1.0.0",

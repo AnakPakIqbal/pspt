@@ -30,9 +30,14 @@ async function main() {
     rowColor: 'yellow',
     tasks: [
       {
-        no: 1, name: 'Auth Middleware', detail: 'JWT + refresh tokens',
-        startDate: '2026-06-11', endDate: '2026-06-12',
-        deliverables: 'Auth Middleware', commitCount: 3, lines: '+120 / -30',
+        no: 1,
+        name: 'Auth Middleware',
+        detail: 'JWT + refresh tokens',
+        startDate: '2026-06-11',
+        endDate: '2026-06-12',
+        deliverables: 'Auth Middleware',
+        commitCount: 3,
+        lines: '+120 / -30',
       },
     ],
   });
@@ -47,20 +52,21 @@ All setters/`addSection`/`addCallout` return `this`, so they can be chained.
 
 ## Setter reference
 
-| Method | Purpose |
-|---|---|
-| `setTitle(title)` | Sets the workbook title / worksheet name. |
-| `setCalendarRange(startDate, endDate)` | Explicit calendar bounds (e.g. `'2026-06-01'`, `'2026-08-31'`). If never called, the range is computed automatically from the min/max task dates. |
-| `setMinMonthsSpan(count = 3)` | Minimum number of months the calendar should span, even if task dates cover less. |
-| `setExpandFullMonths(enabled = true)` | Whether to auto-expand the calendar to the 1st/last day of its start/end months. |
-| `addSection({title, bannerColor?, rowColor?, tasks})` | Adds one banner-row group of tasks. See below for the task shape and color options. |
-| `addCallout({dateStr, text, color?})` | Records a callout on a specific date. **Currently accepted but not rendered anywhere** — see [Known gap](#known-gap-addcallout-is-not-rendered) below. |
-| `generate(filePath)` | Renders and writes the `.xlsx` file to disk (async). |
+| Method                                                | Purpose                                                                                                                                                |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `setTitle(title)`                                     | Sets the workbook title / worksheet name.                                                                                                              |
+| `setCalendarRange(startDate, endDate)`                | Explicit calendar bounds (e.g. `'2026-06-01'`, `'2026-08-31'`). If never called, the range is computed automatically from the min/max task dates.      |
+| `setMinMonthsSpan(count = 3)`                         | Minimum number of months the calendar should span, even if task dates cover less.                                                                      |
+| `setExpandFullMonths(enabled = true)`                 | Whether to auto-expand the calendar to the 1st/last day of its start/end months.                                                                       |
+| `addSection({title, bannerColor?, rowColor?, tasks})` | Adds one banner-row group of tasks. See below for the task shape and color options.                                                                    |
+| `addCallout({dateStr, text, color?})`                 | Records a callout on a specific date. **Currently accepted but not rendered anywhere** — see [Known gap](#known-gap-addcallout-is-not-rendered) below. |
+| `generate(filePath)`                                  | Renders and writes the `.xlsx` file to disk (async).                                                                                                   |
 
 ## Colors
 
 Both `bannerColor` and `rowColor` (on `addSection`) and `color` (on
 `addCallout`) accept either:
+
 - a named preset: `green`, `yellow`, `pink`, `blue`, `purple`, `gray` (these are
   the light row-background presets), or
 - a raw hex string, with or without a leading `#` (e.g. `'2D7D46'`, `'#2D7D46'`).
@@ -74,20 +80,20 @@ match the original template exactly.
 Passed as objects inside `addSection({tasks: [...]})`. Every field has a
 default if omitted:
 
-| Field | Default | Notes |
-|---|---|---|
-| `no` | — | Row number, any value you want to display. |
-| `name` | `''` | Task name (left table, "FEATURE NAME" column). |
-| `detail` | `''` | "FEATURE DETAIL" column. |
-| `checklist` | `'Completed'` | Free-text status column. |
-| `mandays` | `1` | Numeric. |
-| `total` | `mandays` | Numeric, defaults to `mandays` if omitted. |
-| `startDate` / `endDate` | — | Parsed via a lenient date parser — accepts `'YYYY-MM-DD'` strings or `Date` objects. Drives the Gantt bar's date range. |
-| `deliverables` | `''` | Free text. |
-| `notes` | `''` | Free text, **or** `{ text, hyperlink }` for a clickable link (rendered blue/underlined). |
-| `commitCount` | `1` | Shown as a badge on the first day of the task's Gantt bar. |
-| `lines` | `'+0 / -0'` | Shown in the "Lines (+/-)" column and the Gantt bar's tooltip note. Can instead be derived automatically by passing `linesAdded`/`linesRemoved` (see below). |
-| `check` | `true` | Rendered as ☑/☐ in the "Check" column. |
+| Field                   | Default       | Notes                                                                                                                                                        |
+| ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `no`                    | —             | Row number, any value you want to display.                                                                                                                   |
+| `name`                  | `''`          | Task name (left table, "FEATURE NAME" column).                                                                                                               |
+| `detail`                | `''`          | "FEATURE DETAIL" column.                                                                                                                                     |
+| `checklist`             | `'Completed'` | Free-text status column.                                                                                                                                     |
+| `mandays`               | `1`           | Numeric.                                                                                                                                                     |
+| `total`                 | `mandays`     | Numeric, defaults to `mandays` if omitted.                                                                                                                   |
+| `startDate` / `endDate` | —             | Parsed via a lenient date parser — accepts `'YYYY-MM-DD'` strings or `Date` objects. Drives the Gantt bar's date range.                                      |
+| `deliverables`          | `''`          | Free text.                                                                                                                                                   |
+| `notes`                 | `''`          | Free text, **or** `{ text, hyperlink }` for a clickable link (rendered blue/underlined).                                                                     |
+| `commitCount`           | `1`           | Shown as a badge on the first day of the task's Gantt bar.                                                                                                   |
+| `lines`                 | `'+0 / -0'`   | Shown in the "Lines (+/-)" column and the Gantt bar's tooltip note. Can instead be derived automatically by passing `linesAdded`/`linesRemoved` (see below). |
+| `check`                 | `true`        | Rendered as ☑/☐ in the "Check" column.                                                                                                                       |
 
 `lines` can also be supplied indirectly:
 

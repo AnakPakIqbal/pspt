@@ -42,14 +42,14 @@ doc "My Doc" type=docx  // trailing comment
 
 Every field/attribute value is one of:
 
-| Kind | Example | Notes |
-|---|---|---|
-| string | `"Hello, \"world\"\nline two"` | `\"`, `\\`, `\n` escapes supported. Must stay on one line (unterminated at end-of-line is an error). |
-| number | `42`, `-1`, `2.5` | |
-| date | `2026-07-22` | Must match `YYYY-MM-DD` exactly and not be followed by more identifier characters. |
-| bool | `true` / `false` | |
-| null | `null` | |
-| bare ident | `bareword`, `1B365D` (hex color) | Treated as a string value. Used for color names/hex codes and unquoted words. |
+| Kind       | Example                          | Notes                                                                                                |
+| ---------- | -------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| string     | `"Hello, \"world\"\nline two"`   | `\"`, `\\`, `\n` escapes supported. Must stay on one line (unterminated at end-of-line is an error). |
+| number     | `42`, `-1`, `2.5`                |                                                                                                      |
+| date       | `2026-07-22`                     | Must match `YYYY-MM-DD` exactly and not be followed by more identifier characters.                   |
+| bool       | `true` / `false`                 |                                                                                                      |
+| null       | `null`                           |                                                                                                      |
+| bare ident | `bareword`, `1B365D` (hex color) | Treated as a string value. Used for color names/hex codes and unquoted words.                        |
 
 ## Docx documents
 
@@ -89,7 +89,7 @@ section overview {
 compiles to:
 
 ```js
-doc.setExecutiveSummary("Acme Widget is a widget-connecting widget.");
+doc.setExecutiveSummary('Acme Widget is a widget-connecting widget.');
 ```
 
 If a field name has no matching setter, it's skipped with a `// WARNING:`
@@ -101,7 +101,7 @@ plain string fields — pass a real file path and the SDK embeds it, omit it (or
 pass a path that doesn't exist) and the SDK draws a placeholder box. No special
 grammar is needed for these.
 
-**Known limitation:** fields whose setter expects an *object* payload (e.g.
+**Known limitation:** fields whose setter expects an _object_ payload (e.g.
 `setCoverPage({productName, shortDescription, lastUpdated, status})`,
 `setApis({rows, docsLink})`, `setPricingModel({modelDescription, tiers})`) are
 not yet expressible as a nested object literal in this grammar version — a bare
@@ -167,7 +167,7 @@ section technical {
 - Nesting is only rendered one level deep by the underlying `numberedBlock()`
   renderer — a third nesting level parses fine but is flattened into the same
   lettered sub-list rather than gaining its own further indent.
-- `notes:` is consumed as part of the `setSecurity` call and is *not* also
+- `notes:` is consumed as part of the `setSecurity` call and is _not_ also
   emitted as a separate field — this is intentional, not a bug.
 - A `list` block with any name other than `measures` has no known consumer yet
   and is skipped with a `// WARNING:`.

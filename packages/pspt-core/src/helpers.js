@@ -12,8 +12,15 @@ const { XLSX_ROW_PRESETS, XLSX_COLORS, DOCX_COLOR } = require('./tokens');
 /** Builds the standard single 0.5pt black border set used by every docx table. */
 function docxBorderSet(docx) {
   const { BorderStyle } = docx;
-  const b = { style: BorderStyle.SINGLE, size: 4, color: DOCX_COLOR.border };
-  return { top: b, bottom: b, left: b, right: b, insideHorizontal: b, insideVertical: b };
+  const edge = { style: BorderStyle.SINGLE, size: 4, color: DOCX_COLOR.border };
+  return {
+    top: edge,
+    bottom: edge,
+    left: edge,
+    right: edge,
+    insideHorizontal: edge,
+    insideVertical: edge,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -48,9 +55,9 @@ function parseDate(dateVal) {
 }
 
 function resetTime(date) {
-  const d = new Date(date.getTime());
-  d.setHours(0, 0, 0, 0);
-  return d;
+  const reset = new Date(date.getTime());
+  reset.setHours(0, 0, 0, 0);
+  return reset;
 }
 
 function formatDateDisplay(date) {
@@ -75,7 +82,7 @@ function resolveColor(colorInput, defaultHex, rowPresets) {
   const presets = rowPresets || XLSX_ROW_PRESETS;
   if (!colorInput) return defaultHex.startsWith('FF') ? defaultHex : `FF${defaultHex}`;
   if (presets[colorInput]) return presets[colorInput];
-  let hex = colorInput.replace('#', '');
+  const hex = colorInput.replace('#', '');
   return hex.length === 6 ? `FF${hex}` : hex;
 }
 

@@ -82,91 +82,91 @@ of plain objects keyed exactly as shown.
 
 ### Cover
 
-| Setter | Shape |
-|---|---|
+| Setter            | Shape                                                                    |
+| ----------------- | ------------------------------------------------------------------------ |
 | `setCoverPage(p)` | `{ productName, shortDescription, lastUpdated, status, logoImagePath? }` |
 
 ### 1. Product Overview
 
-| Setter | Shape |
-|---|---|
-| `setProductInfo(p)` | `{ productName, version, status }` |
-| `setExecutiveSummary(text)` | string |
-| `setProductRoadmap(rows)` | `{ phase, theme, timeframe, status }[]` |
+| Setter                      | Shape                                   |
+| --------------------------- | --------------------------------------- |
+| `setProductInfo(p)`         | `{ productName, version, status }`      |
+| `setExecutiveSummary(text)` | string                                  |
+| `setProductRoadmap(rows)`   | `{ phase, theme, timeframe, status }[]` |
 
 ### 2.1 Business Perspective
 
-| Setter | Shape |
-|---|---|
-| `setTargetMarket(rows)` | `{ segment, description }[]` |
-| `setCustomerPersonas(rows)` | `{ persona, role, goals, painPoints, buyingBehavior }[]` |
-| `setUserJourney(p)` | `{ imagePath?, caption?, widthPx?, heightPx? }` |
-| `setUseCases(rows)` | `{ useCase, actor, trigger, outcome }[]` |
-| `setCompetitiveAnalysis(rows)` | `{ competitor, strengths, weaknesses, pricing, differentiator }[]` |
-| `setPricingModel(p)` | `{ modelDescription, tiers: { tier, price, includes, targetSegment }[] }` |
-| `setRevenueModel(text)` | string |
+| Setter                         | Shape                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| `setTargetMarket(rows)`        | `{ segment, description }[]`                                              |
+| `setCustomerPersonas(rows)`    | `{ persona, role, goals, painPoints, buyingBehavior }[]`                  |
+| `setUserJourney(p)`            | `{ imagePath?, caption?, widthPx?, heightPx? }`                           |
+| `setUseCases(rows)`            | `{ useCase, actor, trigger, outcome }[]`                                  |
+| `setCompetitiveAnalysis(rows)` | `{ competitor, strengths, weaknesses, pricing, differentiator }[]`        |
+| `setPricingModel(p)`           | `{ modelDescription, tiers: { tier, price, includes, targetSegment }[] }` |
+| `setRevenueModel(text)`        | string                                                                    |
 
 ### 2.2 Functional Specification
 
-| Setter | Shape |
-|---|---|
+| Setter              | Shape                                                             |
+| ------------------- | ----------------------------------------------------------------- |
 | `setFeatures(rows)` | `{ name, description, priority }[]` (priority: Must/Should/Could) |
 
 ### 2.3 Technical Specification
 
-| Setter | Shape |
-|---|---|
-| `setSystemArchitecture(p)` | `{ description, diagramImagePath? }` |
-| `setTechnologyStack(rows)` | `{ layer, technology, justification }[]` |
-| `setApis(p)` | `{ rows: { endpoint, method, description, authRequired, role }[], docsLink? }` |
-| `setDatabaseDesign(p)` | `{ rows: { table, purpose, keyFields, url }[], diagramImagePath? }` |
-| `setAuthentication(text)` | string |
-| `setSecurity(p)` | `{ measures: { title, children? }[], notes? }` — renders as a nested numbered list |
-| `setMonitoring(text)` | string |
-| `setLogging(text)` | string |
-| `setBackupStrategy(text)` | string |
+| Setter                     | Shape                                                                              |
+| -------------------------- | ---------------------------------------------------------------------------------- |
+| `setSystemArchitecture(p)` | `{ description, diagramImagePath? }`                                               |
+| `setTechnologyStack(rows)` | `{ layer, technology, justification }[]`                                           |
+| `setApis(p)`               | `{ rows: { endpoint, method, description, authRequired, role }[], docsLink? }`     |
+| `setDatabaseDesign(p)`     | `{ rows: { table, purpose, keyFields, url }[], diagramImagePath? }`                |
+| `setAuthentication(text)`  | string                                                                             |
+| `setSecurity(p)`           | `{ measures: { title, children? }[], notes? }` — renders as a nested numbered list |
+| `setMonitoring(text)`      | string                                                                             |
+| `setLogging(text)`         | string                                                                             |
+| `setBackupStrategy(text)`  | string                                                                             |
 
 ### 2.4 Hardware Specification (only rendered if `setEnableHardwareSection(true)`)
 
-| Setter | Shape |
-|---|---|
-| `setHardwareOverview(text)` | string |
-| `setHardwareComponents(rows)` | `{ component, function, vendor, altVendor }[]` |
-| `setBillOfMaterials(rows)` | `{ partNo, description, qty, unitCost, vendor, leadTime }[]` |
-| `setMechanicalDesign(p)` | `{ description, diagramImagePath? }` |
-| `setElectricalSpecification(p)` | `{ description, diagramImagePath? }` |
-| `setSensors(rows)` | `{ sensor, type, range, accuracy, purpose }[]` |
-| `setConnectivity(text)` | string |
-| `setPowerRequirements(text)` | string |
-| `setFirmware(text)` | string |
-| `setCertifications(rows)` | `{ certification, region, status, targetDate }[]` |
-| `setEnvironmentalRequirements(text)` | string |
-| `setManufacturingNotes(text)` | string |
-| `setMaintenance(text)` | string |
+| Setter                               | Shape                                                        |
+| ------------------------------------ | ------------------------------------------------------------ |
+| `setHardwareOverview(text)`          | string                                                       |
+| `setHardwareComponents(rows)`        | `{ component, function, vendor, altVendor }[]`               |
+| `setBillOfMaterials(rows)`           | `{ partNo, description, qty, unitCost, vendor, leadTime }[]` |
+| `setMechanicalDesign(p)`             | `{ description, diagramImagePath? }`                         |
+| `setElectricalSpecification(p)`      | `{ description, diagramImagePath? }`                         |
+| `setSensors(rows)`                   | `{ sensor, type, range, accuracy, purpose }[]`               |
+| `setConnectivity(text)`              | string                                                       |
+| `setPowerRequirements(text)`         | string                                                       |
+| `setFirmware(text)`                  | string                                                       |
+| `setCertifications(rows)`            | `{ certification, region, status, targetDate }[]`            |
+| `setEnvironmentalRequirements(text)` | string                                                       |
+| `setManufacturingNotes(text)`        | string                                                       |
+| `setMaintenance(text)`               | string                                                       |
 
 ### 3. UI/UX Specification
 
-| Setter | Shape |
-|---|---|
-| `setDesignTools(rows)` | `{ category, tool, link }[]` |
-| `setDesignPrinciples(text)` | string |
-| `setLayoutGrid(rows)` | `{ property, value }[]` |
-| `setTypography(rows)` | `{ weight, sizes }[]` (first row typically `{weight:'Font family', sizes:'<name>'}`) |
-| `setColorPalette(rows)` | `{ role, color, hex }[]` |
-| `setComponentsStates(rows)` | `{ component, state, behavior }[]` |
-| `setResponsiveBehavior(rows)` | `{ breakpoint, device, notes }[]` |
-| `setInteractionAnimation(rows)` | `{ aspect, notes }[]` |
-| `setRevisionHistory(rows)` | `{ version, date, changes }[]` |
+| Setter                          | Shape                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------ |
+| `setDesignTools(rows)`          | `{ category, tool, link }[]`                                                         |
+| `setDesignPrinciples(text)`     | string                                                                               |
+| `setLayoutGrid(rows)`           | `{ property, value }[]`                                                              |
+| `setTypography(rows)`           | `{ weight, sizes }[]` (first row typically `{weight:'Font family', sizes:'<name>'}`) |
+| `setColorPalette(rows)`         | `{ role, color, hex }[]`                                                             |
+| `setComponentsStates(rows)`     | `{ component, state, behavior }[]`                                                   |
+| `setResponsiveBehavior(rows)`   | `{ breakpoint, device, notes }[]`                                                    |
+| `setInteractionAnimation(rows)` | `{ aspect, notes }[]`                                                                |
+| `setRevisionHistory(rows)`      | `{ version, date, changes }[]`                                                       |
 
 ### 4. Quality Control
 
-| Setter | Shape |
-|---|---|
-| `setTestStrategy(text)` | string |
-| `setTestPlan(rows)` | `{ phase, scope, entryCriteria, exitCriteria }[]` |
-| `setTestCases(rows)` | `{ id, description, steps, expectedResult, status }[]` |
-| `setBugTracking(rows)` | `{ severity, definition, sla }[]` |
-| `setSecurityTesting(text)` | string |
+| Setter                        | Shape                                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------ |
+| `setTestStrategy(text)`       | string                                                                                     |
+| `setTestPlan(rows)`           | `{ phase, scope, entryCriteria, exitCriteria }[]`                                          |
+| `setTestCases(rows)`          | `{ id, description, steps, expectedResult, status }[]`                                     |
+| `setBugTracking(rows)`        | `{ severity, definition, sla }[]`                                                          |
+| `setSecurityTesting(text)`    | string                                                                                     |
 | `setHardwareValidation(rows)` | `{ type, description, standard, result }[]` — only rendered if hardware section is enabled |
 
 ## Images and diagrams
@@ -184,8 +184,8 @@ its own.
 ## Output
 
 ```js
-await doc.generate('/path/to/output.docx');       // writes to disk
-const buf = await doc.toBuffer();                  // or get a Buffer directly
+await doc.generate('/path/to/output.docx'); // writes to disk
+const buf = await doc.toBuffer(); // or get a Buffer directly
 ```
 
 ## Using it via the `.pspt` DSL instead
@@ -193,7 +193,7 @@ const buf = await doc.toBuffer();                  // or get a Buffer directly
 If you'd rather author specs in a terser, non-JS format, see
 [`pspt-lang`](../pspt-lang/README.md) — it compiles `.pspt` files into scripts
 that call this same SDK. Note the DSL currently only supports scalar/table
-fields; a handful of setters that expect a nested *object* payload (`setCoverPage`,
+fields; a handful of setters that expect a nested _object_ payload (`setCoverPage`,
 `setApis`, `setPricingModel`, `setSystemArchitecture`, `setDatabaseDesign`,
 `setUserJourney`, `setMechanicalDesign`, `setElectricalSpecification`) aren't yet
 expressible in the DSL grammar and must be set via direct SDK calls for now.

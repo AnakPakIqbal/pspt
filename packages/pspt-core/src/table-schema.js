@@ -12,9 +12,9 @@
  * @returns {number[]} widths per column, summing exactly to totalWidth
  */
 function distributeColumnWidths(columns, totalWidth) {
-  const totalWeight = columns.reduce((s, c) => s + (c.weight || 1), 0);
-  const widths = columns.map((c) => Math.floor((totalWidth * (c.weight || 1)) / totalWeight));
-  const drift = totalWidth - widths.reduce((a, b) => a + b, 0);
+  const totalWeight = columns.reduce((sum, col) => sum + (col.weight || 1), 0);
+  const widths = columns.map((col) => Math.floor((totalWidth * (col.weight || 1)) / totalWeight));
+  const drift = totalWidth - widths.reduce((sum, width) => sum + width, 0);
   widths[widths.length - 1] += drift;
   return widths;
 }
@@ -28,7 +28,7 @@ function distributeColumnWidths(columns, totalWidth) {
  */
 function resolveRows(rows, placeholderRows) {
   const hasData = Array.isArray(rows) && rows.length > 0;
-  return { hasData, rows: hasData ? rows : (placeholderRows || []) };
+  return { hasData, rows: hasData ? rows : placeholderRows || [] };
 }
 
 module.exports = { distributeColumnWidths, resolveRows };

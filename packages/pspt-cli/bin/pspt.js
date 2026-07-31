@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 'use strict';
 
-const { compileFile } = require('../src/compile');
 const { buildFile } = require('../src/build');
+const { compileFile } = require('../src/compile');
 const { scanGit } = require('../src/scan-git');
 
 function parseFlags(args) {
   const positional = [];
   const flags = {};
   for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a.startsWith('--')) {
-      const key = a.slice(2);
+    const arg = args[i];
+    if (arg.startsWith('--')) {
+      const key = arg.slice(2);
       const next = args[i + 1];
       if (next !== undefined && !next.startsWith('--')) {
         flags[key] = next;
@@ -20,7 +20,7 @@ function parseFlags(args) {
         flags[key] = true;
       }
     } else {
-      positional.push(a);
+      positional.push(arg);
     }
   }
   return { positional, flags };
@@ -52,7 +52,11 @@ async function main() {
   try {
     if (cmd === 'compile') {
       const file = positional[0];
-      if (!file) { printUsage(); process.exitCode = 1; return; }
+      if (!file) {
+        printUsage();
+        process.exitCode = 1;
+        return;
+      }
       const result = compileFile(file, flags.out);
       console.log(`Compiled ${file} -> ${result.outPath} (type=${result.docType})`);
       return;
@@ -60,23 +64,35 @@ async function main() {
 
     if (cmd === 'build') {
       const file = positional[0];
-      if (!file) { printUsage(); process.exitCode = 1; return; }
+      if (!file) {
+        printUsage();
+        process.exitCode = 1;
+        return;
+      }
       const result = await buildFile(file, flags.out);
       console.log(`Built ${file} -> ${result.outputPath} (type=${result.docType})`);
       return;
     }
 
     if (cmd === 'scan-git') {
-      if (positional.length === 0) { printUsage(); process.exitCode = 1; return; }
-      const result = scanGit(positional, { since: flags.since, out: flags.out, withDiffStat: !!flags['with-lines'] });
+      if (positional.length === 0) {
+        printUsage();
+        process.exitCode = 1;
+        return;
+      }
+      const result = scanGit(positional, {
+        since: flags.since,
+        out: flags.out,
+        withDiffStat: Boolean(flags['with-lines']),
+      });
       console.log(`Scanned ${positional.length} repo(s) -> ${result.outPath}`);
       return;
     }
 
     printUsage();
     process.exitCode = cmd ? 1 : 0;
-  } catch (e) {
-    console.error(`pspt: ${e.message}`);
+  } catch (err) {
+    console.error(`pspt: ${err.message}`);
     process.exitCode = 1;
   }
 }

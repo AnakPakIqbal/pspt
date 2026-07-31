@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    "packages/pspt-core": {
+      "entry": ["src/index.js"],
+      "project": ["src/**/*.js"]
+    },
+    "packages/pspt-docx": {
+      "entry": ["src/product-spec-sdk.js"],
+      "project": ["src/**/*.js"]
+    },
+    "packages/pspt-xlsx": {
+      "entry": ["src/excel-tracker-sdk.js"],
+      "project": ["src/**/*.js"]
+    },
+    "packages/pspt-lang": {
+      "entry": ["src/index.js"],
+      "project": ["src/**/*.js"]
+    },
+    "packages/pspt-cli": {
+      "entry": ["bin/pspt.js", "src/index.js"],
+      "project": ["src/**/*.js", "bin/**/*.js"]
+    },
+    "examples": {
+      "entry": ["example-usage.js", "example-tracker-usage.js"],
+      "project": ["*.js"]
+    }
+  }
+}

@@ -1,8 +1,8 @@
 'use strict';
 
+const { generate } = require('./codegen');
 const { tokenize, LexError } = require('./lexer');
 const { parse, ParseError } = require('./parser');
-const { generate } = require('./codegen');
 
 /**
  * Compiles .pspt source text into generated JS source text.

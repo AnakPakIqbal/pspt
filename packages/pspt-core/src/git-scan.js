@@ -16,17 +16,17 @@ const { execSync } = require('child_process');
  */
 function getCommitDiffStat(repoPath, hash) {
   try {
-    const stat = execSync(
-      `git show --shortstat --format="" ${hash.trim()}`,
-      { cwd: repoPath, encoding: 'utf8' },
-    ).trim();
+    const stat = execSync(`git show --shortstat --format="" ${hash.trim()}`, {
+      cwd: repoPath,
+      encoding: 'utf8',
+    }).trim();
     const insMatch = stat.match(/(\d+)\s+insertion/);
     const delMatch = stat.match(/(\d+)\s+deletion/);
     return {
       insertions: insMatch ? parseInt(insMatch[1], 10) : 0,
       deletions: delMatch ? parseInt(delMatch[1], 10) : 0,
     };
-  } catch (e) {
+  } catch (err) {
     return { insertions: 0, deletions: 0 };
   }
 }
@@ -78,11 +78,11 @@ function scanRepoCommits(repoPath, opts = {}) {
   const seen = new Set();
   const commits = [];
   lines.forEach((line) => {
-    const [hash, date, author, email, ...s] = line.split('|');
+    const [hash, date, author, email, ...subjectParts] = line.split('|');
     if (seen.has(hash)) return;
     seen.add(hash);
     if (opts.authorEmail && !(email && email.includes(opts.authorEmail))) return;
-    const commit = { hash, date, author, email, subject: s.join('|') };
+    const commit = { hash, date, author, email, subject: subjectParts.join('|') };
     if (opts.withDiffStat) {
       const { insertions, deletions } = getCommitDiffStat(repoPath, hash);
       commit.insertions = insertions;
@@ -101,19 +101,22 @@ function scanRepoCommits(repoPath, opts = {}) {
 function scanRepoFull(repoPath, opts = {}) {
   const result = { path: repoPath, remote: null, branches: null, commits: [], error: null };
   try {
-    result.remote = execSync('git config --get remote.origin.url', { cwd: repoPath, encoding: 'utf8' }).trim();
-  } catch (e) {
+    result.remote = execSync('git config --get remote.origin.url', {
+      cwd: repoPath,
+      encoding: 'utf8',
+    }).trim();
+  } catch (err) {
     result.remote = null;
   }
   try {
     result.branches = execSync('git branch -a', { cwd: repoPath, encoding: 'utf8' }).trim();
-  } catch (e) {
+  } catch (err) {
     result.branches = null;
   }
   try {
     result.commits = scanRepoCommits(repoPath, opts);
-  } catch (e) {
-    result.error = e.message;
+  } catch (err) {
+    result.error = err.message;
   }
   return result;
 }

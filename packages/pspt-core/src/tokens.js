@@ -16,35 +16,37 @@ const PLACEHOLDER_ROW_TEXT = '[...]';
 const DOCX_FONT = 'Arial';
 
 const DOCX_COLOR = {
-  h1: '1f3864',              // Heading 1 (navy)
-  h2: '2e5395',              // Heading 2 (blue)
-  h3: '3d3d3d',              // Heading 3 (dark grey)
-  h4: '2e74b5',              // Heading 4 (italic blue)
-  purposeLabel: '2e5395',    // "Purpose: " label
-  purposeText: '6b6b6b',     // Purpose description text
-  coverValue: '8a8a8a',      // cover page placeholder values (grey italic)
-  tableHeaderBg: '1f3864',   // table header row fill
+  h1: '1f3864', // Heading 1 (navy)
+  h2: '2e5395', // Heading 2 (blue)
+  h3: '3d3d3d', // Heading 3 (dark grey)
+  h4: '2e74b5', // Heading 4 (italic blue)
+  purposeLabel: '2e5395', // "Purpose: " label
+  purposeText: '6b6b6b', // Purpose description text
+  coverValue: '8a8a8a', // cover page placeholder values (grey italic)
+  tableHeaderBg: '1f3864', // table header row fill
   tableHeaderText: 'ffffff', // table header row text
   border: '000000',
   black: '000000',
   headerFooterText: '6b6b6b',
   confidential: 'cc0000',
-  imageBoxFill: 'CFE2F3',    // cover placeholder graphic fill
+  imageBoxFill: 'CFE2F3', // cover placeholder graphic fill
 };
 
-const DOCX_SIZE = { // half-points (Word convention: 22 half-points = 11pt)
-  appName: 80,      // 40pt — cover page application name
-  docTitle: 40,     // 20pt — "Product Specification" on cover
-  h1: 32,           // 16pt
-  h2: 26,           // 13pt
-  h3: 23,           // 11.5pt
-  h4: 22,           // 11pt (italic)
-  body: 22,         // 11pt
+const DOCX_SIZE = {
+  // half-points (Word convention: 22 half-points = 11pt)
+  appName: 80, // 40pt — cover page application name
+  docTitle: 40, // 20pt — "Product Specification" on cover
+  h1: 32, // 16pt
+  h2: 26, // 13pt
+  h3: 23, // 11.5pt
+  h4: 22, // 11pt (italic)
+  body: 22, // 11pt
   headerFooter: 18, // 9pt
 };
 
 const DOCX_PAGE = {
-  width: 12240, height: 15840, // US Letter, portrait (DXA)
+  width: 12240,
+  height: 15840, // US Letter, portrait (DXA)
   margin: { top: 1440, bottom: 1440, left: 1440, right: 1440, header: 708, footer: 708 },
 };
 
@@ -56,11 +58,11 @@ const DOCX_CONTENT_WIDTH = DOCX_PAGE.width - DOCX_PAGE.margin.left - DOCX_PAGE.m
 // ---------------------------------------------------------------------------
 
 const XLSX_COLORS = {
-  navyHeader: 'FF1B365D',      // Main header bar (Navy Blue)
+  navyHeader: 'FF1B365D', // Main header bar (Navy Blue)
   darkGreenBanner: 'FF2D7D46', // Section header (Dark Green)
-  redWeekend: 'FFCC0000',      // Weekend column (Red)
-  blueGantt: 'FF4A90E2',       // Gantt timeline bar (Blue)
-  gridBorder: 'FF595959',      // Soft black grid border
+  redWeekend: 'FFCC0000', // Weekend column (Red)
+  blueGantt: 'FF4A90E2', // Gantt timeline bar (Blue)
+  gridBorder: 'FF595959', // Soft black grid border
   white: 'FFFFFFFF',
   darkText: 'FF333333',
 };

@@ -17,11 +17,11 @@ function compileFile(psptFile, outPath) {
   let result;
   try {
     result = compile(source, label);
-  } catch (e) {
-    if (e.name === 'PsptLexError' || e.name === 'PsptParseError') {
-      throw new Error(`${label}: ${e.message}`);
+  } catch (err) {
+    if (err.name === 'PsptLexError' || err.name === 'PsptParseError') {
+      throw new Error(`${label}: ${err.message}`, { cause: err });
     }
-    throw e;
+    throw err;
   }
   const genPath = outPath || psptFile.replace(/\.pspt$/, '') + '.gen.js';
   fs.writeFileSync(genPath, result.js);
