@@ -3,7 +3,25 @@
   "version": "1.0.0",
   "description": "ExcelTrackerSDK ported to use pspt-core: generates Excel (.xlsx) Gantt project trackers.",
   "main": "src/excel-tracker-sdk.js",
-  "license": "UNLICENSED",
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "pspt",
+    "xlsx",
+    "excel",
+    "gantt-chart",
+    "project-tracker"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnakPakIqbal/pspt.git",
+    "directory": "packages/pspt-xlsx"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "exceljs": "^4.4.0",
     "pspt-core": "^1.0.0"

@@ -3,7 +3,24 @@
   "version": "1.0.0",
   "description": "ProductSpecSDK ported to use pspt-core: generates Word (.docx) product specification documents.",
   "main": "src/product-spec-sdk.js",
-  "license": "UNLICENSED",
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "pspt",
+    "docx",
+    "word",
+    "product-spec"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnakPakIqbal/pspt.git",
+    "directory": "packages/pspt-docx"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "docx": "^9.7.1",
     "pspt-core": "^1.0.0"

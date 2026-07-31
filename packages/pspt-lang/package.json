@@ -3,5 +3,22 @@
   "version": "1.0.0",
   "description": "Hand-written lexer/parser/codegen for the .pspt DSL, compiling to plain JS calling pspt-docx/pspt-xlsx setters.",
   "main": "src/index.js",
-  "license": "UNLICENSED"
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "pspt",
+    "dsl",
+    "compiler",
+    "parser"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnakPakIqbal/pspt.git",
+    "directory": "packages/pspt-lang"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

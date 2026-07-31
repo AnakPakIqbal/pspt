@@ -3,5 +3,23 @@
   "version": "1.0.0",
   "description": "Shared design tokens, table/column-schema abstraction, placeholder convention, helpers, and git-scan utilities for pspt.",
   "main": "src/index.js",
-  "license": "UNLICENSED"
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "pspt",
+    "docx",
+    "xlsx",
+    "product-spec",
+    "gantt-chart"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnakPakIqbal/pspt.git",
+    "directory": "packages/pspt-core"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

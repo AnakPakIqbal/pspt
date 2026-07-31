@@ -6,7 +6,30 @@
     "pspt": "bin/pspt.js"
   },
   "main": "src/index.js",
-  "license": "UNLICENSED",
+  "files": [
+    "src",
+    "bin"
+  ],
+  "keywords": [
+    "pspt",
+    "cli",
+    "docx",
+    "xlsx",
+    "product-spec",
+    "gantt-chart"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnakPakIqbal/pspt.git",
+    "directory": "packages/pspt-cli"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=16"
+  },
   "dependencies": {
     "pspt-core": "^1.0.0",
     "pspt-docx": "^1.0.0",
