@@ -1,0 +1,7 @@
+doc "Rows Without Matching Table" type=docx
+
+section business {
+  rows features [
+    { name: "Orphan Row", description: "no table decl for this name in this section", priority: "Must" }
+  ]
+}

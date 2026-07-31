@@ -1,0 +1,11 @@
+{
+  "name": "pspt-xlsx",
+  "version": "1.0.0",
+  "description": "ExcelTrackerSDK ported to use pspt-core: generates Excel (.xlsx) Gantt project trackers.",
+  "main": "src/excel-tracker-sdk.js",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "pspt-core": "^1.0.0"
+  }
+}

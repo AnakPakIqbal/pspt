@@ -1,0 +1,7 @@
+node_modules/
+*.log
+
+# generated build artifacts
+examples/output/
+examples/fixtures/**/*.gen.js
+*.gen.js

@@ -1,0 +1,11 @@
+{
+  "name": "pspt-docx",
+  "version": "1.0.0",
+  "description": "ProductSpecSDK ported to use pspt-core: generates Word (.docx) product specification documents.",
+  "main": "src/product-spec-sdk.js",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "docx": "^9.7.1",
+    "pspt-core": "^1.0.0"
+  }
+}

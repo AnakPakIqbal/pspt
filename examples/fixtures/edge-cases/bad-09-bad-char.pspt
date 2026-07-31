@@ -1,0 +1,5 @@
+doc "Bad Character" type=docx
+
+section overview {
+  executiveSummary: "ok" @
+}

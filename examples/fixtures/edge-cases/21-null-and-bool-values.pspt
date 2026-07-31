@@ -1,0 +1,12 @@
+doc "Null And Bool Row Values" type=docx
+
+section business {
+  table features {
+    name: "Feature Name" w1
+    description: "Description" w2
+    priority: "Priority" w1
+  }
+  rows features [
+    { name: "A", description: null, priority: true }
+  ]
+}

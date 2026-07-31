@@ -1,0 +1,52 @@
+doc "Sample Product Spec" type=docx
+
+hardware: true
+
+section overview {
+  executiveSummary: "Sample Widget is a demo product used to exercise the pspt DSL end-to-end."
+
+  table productRoadmap {
+    phase:     "Phase"     w1
+    theme:     "Theme"     w2
+    timeframe: "Timeframe" w1
+    status:    "Status"    w1
+  }
+  rows productRoadmap [
+    { phase: "v1.0", theme: "Initial launch", timeframe: "Q3 2026", status: "In progress" }
+  ]
+}
+
+section business {
+  table features {
+    name:        "Feature Name" w1
+    description: "Description"  w2
+    priority:    "Priority"     w1
+  }
+  rows features [
+    { name: "Auth", description: "OAuth2 login", priority: "Must" },
+    { name: "Dashboard", description: "Usage overview", priority: "Should" }
+  ]
+}
+
+section technical {
+  authentication: "OAuth2 with JWT access tokens; optional TOTP MFA."
+
+  list measures {
+    item "Cloudflare" {
+      item "WAF"
+      item "Turnstile"
+    }
+    item "Cloud Armor" {
+      item "Rate limiting"
+    }
+  }
+  notes: "Data encrypted at rest and in transit; secrets stored in a managed vault."
+}
+
+section hardwareSpec {
+  hardwareOverview: "A pocket-sized BLE sensor puck used only in the demo fixture."
+}
+
+section qa {
+  testStrategy: "Automated unit + integration tests in CI; manual exploratory testing before release."
+}

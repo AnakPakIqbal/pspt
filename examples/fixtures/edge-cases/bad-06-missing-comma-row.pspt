@@ -1,0 +1,11 @@
+doc "Missing Row Field Value" type=docx
+
+section business {
+  table features {
+    name: "Feature Name" w1
+    description: "Description" w2
+  }
+  rows features [
+    { name: "A", description: }
+  ]
+}

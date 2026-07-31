@@ -1,0 +1,7 @@
+doc "Item Without String" type=docx
+
+section technical {
+  list measures {
+    item
+  }
+}

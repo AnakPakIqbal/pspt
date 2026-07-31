@@ -1,0 +1,10 @@
+doc "Rows Missing Bracket" type=docx
+
+section business {
+  table features {
+    name: "Feature Name" w1
+  }
+  rows features
+    { name: "A" }
+  ]
+}

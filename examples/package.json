@@ -1,0 +1,10 @@
+{
+  "name": "pspt-examples",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ported example scripts and .pspt fixtures exercising pspt-docx and pspt-xlsx.",
+  "dependencies": {
+    "pspt-docx": "^1.0.0",
+    "pspt-xlsx": "^1.0.0"
+  }
+}

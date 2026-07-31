@@ -1,0 +1,5 @@
+doc "Object Payload Field" type=docx
+
+section overview {
+  cover: "just a string, but setCoverPage expects an object shape"
+}

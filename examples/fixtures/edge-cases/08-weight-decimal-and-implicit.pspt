@@ -1,0 +1,12 @@
+doc "Weight Variants" type=docx
+
+section business {
+  table features {
+    name: "Feature Name"
+    description: "Description" w2.5
+    priority: "Priority" w0.5
+  }
+  rows features [
+    { name: "A", description: "desc", priority: "Must" }
+  ]
+}

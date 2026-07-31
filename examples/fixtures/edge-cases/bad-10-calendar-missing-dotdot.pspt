@@ -1,0 +1,6 @@
+doc "Calendar Missing Dotdot" type=xlsx
+calendar 2026-01-01 2026-06-30
+
+group "X" {
+  task "T" start=2026-01-01 end=2026-01-02 mandays=1
+}

@@ -1,0 +1,5 @@
+doc "Missing Colon" type=docx
+
+section overview {
+  executiveSummary "forgot the colon"
+}

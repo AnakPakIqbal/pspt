@@ -1,0 +1,322 @@
+'use strict';
+/**
+ * Codegen: turns the AST from parser.js into plain, readable JS source that
+ * constructs a ProductSpecSDK/ExcelTrackerSDK instance and calls its existing
+ * setters/addSection/addCallout methods. Codegen is template-filling against
+ * the Phase 2 adapters — it introduces no new rendering logic of its own.
+ *
+ * docx mapping
+ * ------------
+ * Each top-level `section <name> { ... }` maps free-text fields directly onto
+ * the matching `set<PascalCase(field)>()` setter (e.g. `summary:` inside
+ * `section overview` -> setExecutiveSummary if field name is `executiveSummary`,
+ * or more directly the field name itself is expected to already be the setter
+ * data key, e.g. `executiveSummary: "..."`). A `table <name> { ... }` + a
+ * matching `rows <name> [ ... ]` produce the array-of-objects payload for the
+ * setter whose data key equals `<name>`. Special field-name conventions:
+ *   - keys ending in "ImagePath" (logoImagePath, diagramImagePath, ...) are
+ *     passed through unchanged as string paths (the docx SDK already treats
+ *     missing paths as "draw a placeholder").
+ *   - the `hardware: true` doc-level flag calls `setEnableHardwareSection(true)`.
+ *   - `list <name> { item "..." { item "..." } }` blocks become the nested
+ *     `measures` structure consumed by `setSecurity({measures, notes})`.
+ *
+ * xlsx mapping
+ * ------------
+ * `calendar <from> .. <to>` -> setCalendarRange(from, to).
+ * `group "<title>" color=<c> { task "<name>" start=... end=... ... }` ->
+ * addSection({title, bannerColor, rowColor, tasks: [...]});
+ * `callout <date> "<text>" color=<c>` -> addCallout({dateStr, text, color}).
+ */
+
+const SETTER_DATA_KEY_TO_METHOD = {
+  cover: 'setCoverPage',
+  productInfo: 'setProductInfo',
+  executiveSummary: 'setExecutiveSummary',
+  productRoadmap: 'setProductRoadmap',
+  targetMarket: 'setTargetMarket',
+  customerPersonas: 'setCustomerPersonas',
+  userJourney: 'setUserJourney',
+  useCases: 'setUseCases',
+  competitiveAnalysis: 'setCompetitiveAnalysis',
+  pricingModel: 'setPricingModel',
+  revenueModel: 'setRevenueModel',
+  features: 'setFeatures',
+  systemArchitecture: 'setSystemArchitecture',
+  technologyStack: 'setTechnologyStack',
+  apis: 'setApis',
+  databaseDesign: 'setDatabaseDesign',
+  authentication: 'setAuthentication',
+  security: 'setSecurity',
+  monitoring: 'setMonitoring',
+  logging: 'setLogging',
+  backupStrategy: 'setBackupStrategy',
+  hardwareOverview: 'setHardwareOverview',
+  hardwareComponents: 'setHardwareComponents',
+  billOfMaterials: 'setBillOfMaterials',
+  mechanicalDesign: 'setMechanicalDesign',
+  electricalSpecification: 'setElectricalSpecification',
+  sensors: 'setSensors',
+  connectivity: 'setConnectivity',
+  powerRequirements: 'setPowerRequirements',
+  firmware: 'setFirmware',
+  certifications: 'setCertifications',
+  environmentalRequirements: 'setEnvironmentalRequirements',
+  manufacturingNotes: 'setManufacturingNotes',
+  maintenance: 'setMaintenance',
+  designTools: 'setDesignTools',
+  designPrinciples: 'setDesignPrinciples',
+  layoutGrid: 'setLayoutGrid',
+  typography: 'setTypography',
+  colorPalette: 'setColorPalette',
+  componentsStates: 'setComponentsStates',
+  responsiveBehavior: 'setResponsiveBehavior',
+  interactionAnimation: 'setInteractionAnimation',
+  revisionHistory: 'setRevisionHistory',
+  testStrategy: 'setTestStrategy',
+  testPlan: 'setTestPlan',
+  testCases: 'setTestCases',
+  bugTracking: 'setBugTracking',
+  securityTesting: 'setSecurityTesting',
+  hardwareValidation: 'setHardwareValidation',
+};
+
+// Fields whose setter takes an object payload (possibly merged with a table).
+const OBJECT_PAYLOAD_KEYS = new Set([
+  'cover', 'productInfo', 'userJourney', 'pricingModel', 'systemArchitecture',
+  'apis', 'databaseDesign', 'security', 'mechanicalDesign', 'electricalSpecification',
+]);
+
+function jsLiteral(v) {
+  return JSON.stringify(v, null, 2);
+}
+
+function valueNodeToJs(node) {
+  switch (node.kind) {
+    case 'string': return jsLiteral(node.value);
+    case 'number': return jsLiteral(node.value);
+    case 'date': return jsLiteral(node.value);
+    case 'bool': return jsLiteral(node.value);
+    case 'null': return 'null';
+    case 'ident': return jsLiteral(node.value);
+    default: return 'null';
+  }
+}
+
+function itemsToJs(items, indent) {
+  const pad = '  '.repeat(indent);
+  const childPad = '  '.repeat(indent + 1);
+  const lines = items.map((it) => {
+    if (it.children && it.children.length) {
+      return `${pad}{ title: ${jsLiteral(it.title)}, children: [\n${it.children.map((c) => `${childPad}${jsLiteral(c.title)}`).join(',\n')}\n${pad}] }`;
+    }
+    return `${pad}{ title: ${jsLiteral(it.title)} }`;
+  });
+  return `[\n${lines.join(',\n')}\n${'  '.repeat(indent - 1)}]`;
+}
+
+/**
+ * Compiles a docx Program AST into JS source text.
+ */
+function generateDocx(program, sourceFileLabel) {
+  const lines = [];
+  lines.push('\'use strict\';');
+  lines.push(`// Generated by pspt-lang from ${sourceFileLabel}. Do not hand-edit — re-run \`pspt compile\` instead.`);
+  lines.push("const ProductSpecSDK = require('pspt-docx');");
+  lines.push('');
+  lines.push('async function build(outputPath) {');
+  lines.push('  const doc = new ProductSpecSDK();');
+  lines.push('');
+
+  if (program.hardware && program.hardware.enabled) {
+    lines.push('  doc.setEnableHardwareSection(true);');
+    lines.push('');
+  }
+
+  const tablesByName = new Map(); // name -> Table node
+  const rowsByName = new Map();   // name -> Rows node
+
+  function collectFromBody(body) {
+    body.forEach((node) => {
+      if (node.type === 'Table') tablesByName.set(node.name, node);
+      if (node.type === 'Rows') rowsByName.set(node.name, node);
+    });
+  }
+
+  program.statements.forEach((stmt) => {
+    if (stmt.type === 'Section') collectFromBody(stmt.body);
+  });
+
+  function rowObjLiteral(row, indent) {
+    const pad = '  '.repeat(indent);
+    const fieldPad = '  '.repeat(indent + 1);
+    const fields = row.fields.map((f) => `${fieldPad}${f.key}: ${valueNodeToJs(f.value)}`);
+    return `{\n${fields.join(',\n')}\n${pad}}`;
+  }
+
+  function rowsArrayLiteral(rowsNode, indent) {
+    const pad = '  '.repeat(indent);
+    if (!rowsNode || rowsNode.rows.length === 0) return '[]';
+    const items = rowsNode.rows.map((r) => rowObjLiteral(r, indent + 1));
+    return `[\n${items.map((i) => `${pad}  ${i}`).join(',\n')}\n${pad}]`;
+  }
+
+  program.statements.forEach((stmt) => {
+    if (stmt.type !== 'Section') return;
+    lines.push(`  // section ${stmt.name}`);
+
+    const plainFields = [];
+    const objectFields = {};
+
+    stmt.body.forEach((node) => {
+      if (node.type === 'Field') {
+        plainFields.push(node);
+      } else if (node.type === 'List') {
+        objectFields[node.name] = node;
+      }
+    });
+
+    // `notes` is consumed by the measures-list handler below (setSecurity's
+    // {measures, notes} payload), not by its own setter — skip it silently here.
+    const hasMeasuresList = Object.prototype.hasOwnProperty.call(objectFields, 'measures');
+
+    // Emit free-text / scalar fields whose name matches a known setter key.
+    plainFields.forEach((f) => {
+      if (f.name === 'notes' && hasMeasuresList) return;
+      const method = SETTER_DATA_KEY_TO_METHOD[f.name];
+      if (!method) {
+        lines.push(`  // WARNING: unrecognized field '${f.name}' (line ${f.line}) — no matching setter, skipped`);
+        return;
+      }
+      if (OBJECT_PAYLOAD_KEYS.has(f.name) && f.value.kind !== 'null') {
+        // `${method}` expects an object shape (e.g. {productName, status, ...}
+        // for setCoverPage), but the DSL's `field: value` syntax only produces
+        // a scalar here. Passing the scalar straight through would silently
+        // corrupt the doc (the setter reads c.productName etc., which would
+        // all be undefined) — surface it loudly instead of guessing a shape.
+        lines.push(`  // WARNING: field '${f.name}' (line ${f.line}) maps to ${method}, which expects an object (e.g. {productName, ...}), not a plain value — skipped. Nested object fields are not yet supported by this grammar.`);
+        return;
+      } else {
+        lines.push(`  doc.${method}(${valueNodeToJs(f.value)});`);
+      }
+    });
+
+    // Emit table+rows pairs.
+    const consumedRowNames = new Set();
+    tablesByName.forEach((tableNode, name) => {
+      if (!stmt.body.includes(tableNode)) return;
+      const rowsNode = rowsByName.get(name);
+      if (rowsNode) consumedRowNames.add(name);
+      const method = SETTER_DATA_KEY_TO_METHOD[name];
+      if (!method) {
+        lines.push(`  // WARNING: table '${name}' (line ${tableNode.line}) has no matching setter, skipped`);
+        return;
+      }
+      lines.push(`  doc.${method}(${rowsArrayLiteral(rowsNode, 1)});`);
+    });
+
+    // Flag `rows <name>` blocks with no matching `table <name>` in this
+    // section — otherwise a typo'd table name silently drops the data with
+    // no trace at all, which is worse than the "unknown setter" warning above.
+    stmt.body.forEach((node) => {
+      if (node.type === 'Rows' && !consumedRowNames.has(node.name)) {
+        lines.push(`  // WARNING: rows '${node.name}' (line ${node.line}) has no matching 'table ${node.name} { ... }' in this section, skipped`);
+      }
+    });
+
+    // Emit security-style nested lists -> setSecurity({measures, notes}).
+    Object.entries(objectFields).forEach(([listName, listNode]) => {
+      if (listName === 'measures') {
+        const notesField = plainFields.find((f) => f.name === 'notes');
+        lines.push(`  doc.setSecurity({`);
+        lines.push(`    measures: ${itemsToJs(listNode.items, 2)},`);
+        if (notesField) lines.push(`    notes: ${valueNodeToJs(notesField.value)},`);
+        lines.push(`  });`);
+      } else {
+        lines.push(`  // WARNING: list '${listName}' (line ${listNode.line}) has no known consumer, skipped`);
+      }
+    });
+
+    lines.push('');
+  });
+
+  lines.push('  await doc.generate(outputPath);');
+  lines.push('  return outputPath;');
+  lines.push('}');
+  lines.push('');
+  lines.push('module.exports = { build };');
+  lines.push('');
+  lines.push('if (require.main === module) {');
+  lines.push('  const out = process.argv[2] || \'output.docx\';');
+  lines.push('  build(out).then(() => console.log(\'wrote \' + out)).catch((e) => { console.error(e); process.exit(1); });');
+  lines.push('}');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+/**
+ * Compiles an xlsx Program AST into JS source text.
+ */
+function generateXlsx(program, sourceFileLabel) {
+  const lines = [];
+  lines.push('\'use strict\';');
+  lines.push(`// Generated by pspt-lang from ${sourceFileLabel}. Do not hand-edit — re-run \`pspt compile\` instead.`);
+  lines.push("const ExcelTrackerSDK = require('pspt-xlsx');");
+  lines.push('');
+  lines.push('async function build(outputPath) {');
+  lines.push('  const tracker = new ExcelTrackerSDK();');
+  lines.push(`  tracker.setTitle(${jsLiteral(program.doc.title)});`);
+
+  if (program.calendar) {
+    lines.push(`  tracker.setCalendarRange(${jsLiteral(program.calendar.from)}, ${jsLiteral(program.calendar.to)});`);
+  }
+  lines.push('');
+
+  program.statements.forEach((stmt) => {
+    if (stmt.type === 'Group') {
+      lines.push(`  tracker.addSection({`);
+      lines.push(`    title: ${jsLiteral(stmt.title)},`);
+      if (stmt.bannerColor) lines.push(`    bannerColor: ${jsLiteral(stmt.bannerColor)},`);
+      if (stmt.rowColor) lines.push(`    rowColor: ${jsLiteral(stmt.rowColor)},`);
+      lines.push('    tasks: [');
+      stmt.tasks.forEach((task) => {
+        const attrParts = [`name: ${jsLiteral(task.name)}`];
+        Object.entries(task.attrs).forEach(([k, v]) => {
+          const jsKey = k === 'start' ? 'startDate' : k === 'end' ? 'endDate' : k;
+          attrParts.push(`${jsKey}: ${valueNodeToJs(v)}`);
+        });
+        lines.push(`      { ${attrParts.join(', ')} },`);
+      });
+      lines.push('    ],');
+      lines.push('  });');
+      lines.push('');
+    } else if (stmt.type === 'Callout') {
+      const parts = [`dateStr: ${jsLiteral(stmt.date)}`, `text: ${jsLiteral(stmt.text)}`];
+      if (stmt.color) parts.push(`color: ${jsLiteral(stmt.color)}`);
+      lines.push(`  tracker.addCallout({ ${parts.join(', ')} });`);
+    }
+  });
+
+  lines.push('');
+  lines.push('  await tracker.generate(outputPath);');
+  lines.push('  return outputPath;');
+  lines.push('}');
+  lines.push('');
+  lines.push('module.exports = { build };');
+  lines.push('');
+  lines.push('if (require.main === module) {');
+  lines.push('  const out = process.argv[2] || \'output.xlsx\';');
+  lines.push('  build(out).then(() => console.log(\'wrote \' + out)).catch((e) => { console.error(e); process.exit(1); });');
+  lines.push('}');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+function generate(program, sourceFileLabel) {
+  if (program.doc.docType === 'xlsx') return generateXlsx(program, sourceFileLabel);
+  return generateDocx(program, sourceFileLabel);
+}
+
+module.exports = { generate, generateDocx, generateXlsx };

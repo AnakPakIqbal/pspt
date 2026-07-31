@@ -1,0 +1,7 @@
+{
+  "name": "pspt-lang",
+  "version": "1.0.0",
+  "description": "Hand-written lexer/parser/codegen for the .pspt DSL, compiling to plain JS calling pspt-docx/pspt-xlsx setters.",
+  "main": "src/index.js",
+  "license": "UNLICENSED"
+}

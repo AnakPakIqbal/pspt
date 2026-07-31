@@ -1,0 +1,5 @@
+doc "Bare Ident Value" type=docx
+
+section overview {
+  executiveSummary: bareword
+}

@@ -1,0 +1,5 @@
+doc "Xlsx Empty Group" type=xlsx
+calendar 2026-01-01 .. 2026-02-01
+
+group "Empty Group" color=purple {
+}

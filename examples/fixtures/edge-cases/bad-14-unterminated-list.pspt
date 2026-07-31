@@ -1,0 +1,5 @@
+doc "Unterminated List" type=docx
+
+section technical {
+  list measures {
+    item "One"

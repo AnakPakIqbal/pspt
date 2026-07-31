@@ -1,0 +1,14 @@
+{
+  "name": "pspt",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Monorepo for pspt: product-spec-sdk + excel-tracker-sdk unified core, adapters, CLI, and DSL.",
+  "workspaces": [
+    "packages/*",
+    "examples"
+  ],
+  "scripts": {
+    "example:docx": "node examples/example-usage.js",
+    "example:xlsx": "node examples/example-tracker-usage.js"
+  }
+}

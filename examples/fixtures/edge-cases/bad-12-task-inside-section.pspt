@@ -1,0 +1,5 @@
+doc "Task Inside Section" type=docx
+
+section overview {
+  task "Should not be allowed here"
+}

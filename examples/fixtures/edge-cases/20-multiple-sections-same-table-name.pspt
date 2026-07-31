@@ -1,0 +1,21 @@
+doc "Duplicate Table Name Across Sections" type=docx
+
+section business {
+  table features {
+    name: "Feature Name" w1
+    description: "Description" w2
+  }
+  rows features [
+    { name: "Business A", description: "first" }
+  ]
+}
+
+section overview {
+  table features {
+    name: "Feature Name" w1
+    description: "Description" w2
+  }
+  rows features [
+    { name: "Overview A", description: "second" }
+  ]
+}

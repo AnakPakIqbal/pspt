@@ -1,0 +1,4 @@
+doc "Unterminated Section" type=docx
+
+section overview {
+  executiveSummary: "missing closing brace"

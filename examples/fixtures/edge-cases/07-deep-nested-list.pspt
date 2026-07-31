@@ -1,0 +1,12 @@
+doc "Deep Nested List" type=docx
+
+section technical {
+  list measures {
+    item "Level 1" {
+      item "Level 2" {
+        item "Level 3 (parser only documents one nesting level in codegen)"
+      }
+    }
+  }
+  notes: "Testing whether codegen only flattens one level deep, per itemsToJs."
+}

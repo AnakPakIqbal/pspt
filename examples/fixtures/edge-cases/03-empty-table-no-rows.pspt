@@ -1,0 +1,8 @@
+doc "Empty Table No Rows" type=docx
+
+section business {
+  table features {
+    name: "Feature Name" w1
+    description: "Description" w2
+  }
+}

@@ -1,0 +1,12 @@
+doc "Unknown Field And Table" type=docx
+
+section overview {
+  totallyMadeUpField: "should produce a WARNING comment, not fail"
+
+  table notARealSetterName {
+    foo: "Foo" w1
+  }
+  rows notARealSetterName [
+    { foo: "bar" }
+  ]
+}

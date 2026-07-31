@@ -1,0 +1,7 @@
+doc "Manual Commit Data" type=xlsx
+calendar 2026-01-01 .. 2026-02-01
+
+group "Backend" color=blue {
+  task "Auth API" start=2026-01-05 end=2026-01-10 mandays=5 commitCount=7 lines="+120 / -30"
+  task "Billing API" start=2026-01-11 end=2026-01-15 mandays=4 commitCount=3 lines="+45 / -10"
+}

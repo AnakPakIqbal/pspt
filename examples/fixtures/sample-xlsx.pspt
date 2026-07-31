@@ -1,0 +1,13 @@
+doc "Sample Sprint Tracker" type=xlsx
+calendar 2026-01-01 .. 2026-06-30
+
+group "Backend" color=blue {
+  task "Auth API" start=2026-01-05 end=2026-01-20 mandays=10
+  task "Billing API" start=2026-01-21 end=2026-02-10 mandays=15
+}
+
+group "Frontend" color=green {
+  task "Landing Page" start=2026-02-01 end=2026-02-15 mandays=8
+}
+
+callout 2026-01-01 "New Year Kickoff" color=CC0000

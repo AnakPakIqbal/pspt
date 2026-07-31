@@ -1,0 +1,5 @@
+doc "Whitespace Only String Value" type=docx
+
+section overview {
+  executiveSummary: "   "
+}

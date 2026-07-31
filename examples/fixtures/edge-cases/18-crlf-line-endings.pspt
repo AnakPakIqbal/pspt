@@ -1,0 +1,5 @@
+doc "CRLF Test" type=docx
+
+section overview {
+  executiveSummary: "Uses CRLF line endings throughout"
+}

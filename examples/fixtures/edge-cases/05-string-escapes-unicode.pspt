@@ -1,0 +1,5 @@
+doc "Escapes and Unicode" type=docx
+
+section overview {
+  executiveSummary: "Line one\nLine two with a \"quoted\" word and backslash \\ and emoji 🚀 and 中文字符."
+}

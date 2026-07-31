@@ -1,0 +1,16 @@
+{
+  "name": "pspt-cli",
+  "version": "1.0.0",
+  "description": "pspt CLI: compile/build .pspt files and scan git history.",
+  "bin": {
+    "pspt": "bin/pspt.js"
+  },
+  "main": "src/index.js",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "pspt-core": "^1.0.0",
+    "pspt-docx": "^1.0.0",
+    "pspt-xlsx": "^1.0.0",
+    "pspt-lang": "^1.0.0"
+  }
+}

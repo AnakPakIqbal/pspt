@@ -1,0 +1,9 @@
+doc "Xlsx Multiple Callouts" type=xlsx
+calendar 2026-01-01 .. 2026-02-01
+
+group "Section" {
+  task "T1" start=2026-01-01 end=2026-01-02 mandays=1
+}
+
+callout 2026-01-01 "First callout"
+callout 2026-01-15 "Second callout" color=00FF00

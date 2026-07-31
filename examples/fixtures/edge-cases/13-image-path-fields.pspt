@@ -1,0 +1,5 @@
+doc "Image Path Fields" type=docx
+
+section overview {
+  logoImagePath: "./does-not-exist-logo.png"
+}

@@ -1,0 +1,6 @@
+doc "Xlsx Hex Colors And Extra Task Attrs" type=xlsx
+calendar 2026-01-01 .. 2026-03-31
+
+group "Hex Banner" color=1B365D rowColor=gray {
+  task "Task With Extras" start=2026-01-05 end=2026-01-10 mandays=5 detail="Some detail text" deliverables="A doc" notes="A note" commitCount=7 check=false
+}

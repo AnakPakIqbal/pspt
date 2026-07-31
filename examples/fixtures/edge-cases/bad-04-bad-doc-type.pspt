@@ -1,0 +1,5 @@
+doc "Bad Doc Type" type=pdf
+
+section overview {
+  executiveSummary: "pdf is not a supported type"
+}

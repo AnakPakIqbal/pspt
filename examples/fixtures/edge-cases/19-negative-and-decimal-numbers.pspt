@@ -1,0 +1,7 @@
+doc "Negative And Decimal Numbers" type=xlsx
+calendar 2026-01-01 .. 2026-01-31
+
+group "Numbers" {
+  task "Weird mandays" start=2026-01-01 end=2026-01-02 mandays=-1 commitCount=0
+  task "Decimal mandays" start=2026-01-03 end=2026-01-04 mandays=2.5
+}

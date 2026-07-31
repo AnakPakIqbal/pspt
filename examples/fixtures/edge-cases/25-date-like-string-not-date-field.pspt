@@ -1,0 +1,5 @@
+doc "Date-Looking String Field" type=docx
+
+section overview {
+  executiveSummary: "Last updated 2026-07-22 by the team"
+}

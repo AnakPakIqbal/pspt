@@ -1,0 +1,6 @@
+doc "Hardware Not Bool" type=docx
+hardware: "yes"
+
+section overview {
+  executiveSummary: "hardware flag should only accept true/false"
+}
