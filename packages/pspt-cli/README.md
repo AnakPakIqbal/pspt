@@ -5,14 +5,24 @@ and scans git history for use in trackers.
 
 ## Running it
 
-The bin isn't published/linked globally yet, so invoke it directly with `node`:
+`pspt-cli` is published on npm, so the `pspt` command works globally once
+installed:
+
+```bash
+npm install -g pspt-cli
+pspt <command> [args]
+# or, without installing:
+npx pspt-cli <command> [args]
+```
+
+Working from inside this monorepo without installing the published package,
+invoke the bin directly with `node` instead:
 
 ```bash
 node packages/pspt-cli/bin/pspt.js <command> [args]
 ```
 
-(Once published/linked as a global package, `pspt <command>` would work the
-same way — the commands below are identical either way.)
+Both invocation styles are identical — the commands below apply either way.
 
 ## Commands
 

@@ -71,44 +71,30 @@ direct `ExcelTrackerSDK.addSection()` call. See
 
 ## Publishing (so `npx pspt-cli` works)
 
-These packages aren't published yet — until they are, use them locally per the
-Install section above. Once published, anyone will be able to run:
+All 5 packages (`pspt-core`, `pspt-docx`, `pspt-xlsx`, `pspt-lang`, `pspt-cli`)
+are published on the public npm registry — no local install/link needed.
+Anyone can run:
 
 ```bash
 npx pspt-cli build my-spec.pspt --out my-spec.docx
+# or
+npm install -g pspt-cli
 ```
 
-To publish for the first time, from a machine logged into npm (`npm login` or
-`npm adduser`; check with `npm whoami`):
+This works regardless of the upstream GitHub repo's visibility — npm doesn't
+need GitHub access to install from the registry, only the published npm
+package.
 
-```bash
-cd pspt
-npm install
-
-# Publish in dependency order — pspt-core first, pspt-cli last, since each
-# depends on the one(s) before it. All 5 package.json files already have
-# "publishConfig": {"access": "public"} set (required for scoped/first-time
-# packages) and "license": "MIT".
-npm publish --workspace packages/pspt-core
-npm publish --workspace packages/pspt-docx
-npm publish --workspace packages/pspt-xlsx
-npm publish --workspace packages/pspt-lang
-npm publish --workspace packages/pspt-cli
-```
-
-All 5 package names (`pspt-core`, `pspt-docx`, `pspt-xlsx`, `pspt-lang`,
-`pspt-cli`) were confirmed unclaimed on the npm registry as of this writing —
-verify again with `npm view <name>` before publishing in case that's changed.
-
-**Releasing a new version later**: bump each changed package's `version` field
+**Releasing a new version**: bump each changed package's `version` field
 (and any workspace package that depends on it, if the change is breaking),
-then re-run the same `npm publish --workspace ...` commands for just the
-packages that changed. `npm version patch|minor|major --workspace packages/<pkg>`
-can bump the version for you.
+then run `npm publish --workspace packages/<pkg>` in dependency order
+(`pspt-core` first, `pspt-cli` last, since each depends on the one(s)
+before it) for just the packages that changed. `npm version patch|minor|major
+--workspace packages/<pkg>` can bump the version for you.
 
-**This step is irreversible in an important way**: npm never allows re-using a
-published package name/version, even if you unpublish it — pick names/versions
-you're confident in before running these commands for real (dry-run first with
+**Publishing is irreversible in an important way**: npm never allows
+re-using a published package name/version, even if you unpublish it — pick
+versions you're confident in before publishing for real (dry-run first with
 `--dry-run` appended to any `npm publish` command above).
 
 ## Directory layout
