@@ -1,6 +1,6 @@
-doc "Hardware Off" type=docx
+doc "Hardware Off" type=projectBrief
 hardware: false
 
 section overview {
-  executiveSummary: "Pure SaaS product, no hardware section expected."
+  overview: "Pure SaaS product, no hardware section expected."
 }

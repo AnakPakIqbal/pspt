@@ -1,4 +1,4 @@
-doc "Unknown Field And Table" type=docx
+doc "Unknown Field And Table" type=projectBrief
 
 section overview {
   totallyMadeUpField: "should produce a WARNING comment, not fail"

@@ -1,6 +1,6 @@
 {
   "name": "pspt-cli",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "pspt CLI: compile/build .pspt files and scan git history.",
   "bin": {
     "pspt": "bin/pspt.js"
@@ -31,9 +31,9 @@
     "node": ">=16.9.0"
   },
   "dependencies": {
-    "pspt-core": "^1.0.0",
-    "pspt-docx": "^1.0.0",
-    "pspt-xlsx": "^1.0.0",
-    "pspt-lang": "^1.0.0"
+    "pspt-core": "^2.0.0",
+    "pspt-docx": "^2.0.0",
+    "pspt-xlsx": "^2.0.0",
+    "pspt-lang": "^2.0.0"
   }
 }

@@ -1,4 +1,4 @@
-doc "Bad Character" type=docx
+doc "Bad Character" type=projectBrief
 
 section overview {
   executiveSummary: "ok" @

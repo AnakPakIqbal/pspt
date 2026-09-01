@@ -3,3 +3,7 @@ coverage
 package-lock.json
 examples/output
 **/*.gen.js
+
+# Generated from the SDKs by scripts/generate-llms-docs.js — formatting it
+# here would make it permanently differ from the generator output.
+llms/docx-sdk.md

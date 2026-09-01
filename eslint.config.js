@@ -116,6 +116,22 @@ module.exports = [
   },
 
   {
+    // Repo build scripts: they read/write paths derived from argv and from the
+    // workspace layout, and exit non-zero to fail CI. "Non-literal fs filename"
+    // and "no process.exit" are the intended behaviour here, same as for the
+    // CLI's own entrypoints below.
+    files: ['scripts/**/*.js'],
+    rules: {
+      'security/detect-non-literal-fs-filename': 'off',
+      'n/no-process-exit': 'off',
+      // The doc generator is a linear string builder: its 'complexity' is a long
+      // sequence of lines.push() calls, not branching logic, so splitting it
+      // further would scatter one document across several functions for no gain.
+      'sonarjs/cognitive-complexity': 'off',
+    },
+  },
+
+  {
     // CLI entrypoint scripts are allowed to exit the process directly.
     files: ['packages/pspt-cli/bin/**/*.js'],
     rules: {
@@ -141,7 +157,8 @@ module.exports = [
     // the numbers ARE the content, not incidental magic values. Naming every
     // one as a constant (`const THREE = 3`) would add noise, not clarity.
     files: [
-      'packages/pspt-docx/src/product-spec-sdk.js',
+      'packages/pspt-docx/src/sdk/*.js',
+      'packages/pspt-docx/src/index.js',
       'packages/pspt-xlsx/src/excel-tracker-sdk.js',
       'packages/pspt-core/src/tokens.js',
       'packages/pspt-core/src/helpers.js',
@@ -179,7 +196,7 @@ module.exports = [
   },
 
   {
-    // ProductSpecSDK.generate()/imageOrPlaceholder() read/write whatever
+    // The docx SDKs' generate() methods read/write whatever
     // output path and image path the calling code passes in — same
     // by-design "caller-supplied path" pattern as pspt-cli above.
     files: ['packages/pspt-docx/src/product-spec-sdk.js'],

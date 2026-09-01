@@ -1,4 +1,4 @@
-doc "Item Without String" type=docx
+doc "Item Without String" type=projectBrief
 
 section technical {
   list measures {

@@ -1,6 +1,6 @@
 {
   "name": "pspt-core",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Shared design tokens, table/column-schema abstraction, placeholder convention, helpers, and git-scan utilities for pspt.",
   "main": "src/index.js",
   "files": [

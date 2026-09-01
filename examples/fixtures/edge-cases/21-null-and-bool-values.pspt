@@ -1,12 +1,12 @@
-doc "Null And Bool Row Values" type=docx
+doc "Null And Bool Row Values" type=projectBrief
 
 section business {
-  table features {
-    name: "Feature Name" w1
-    description: "Description" w2
-    priority: "Priority" w1
+  table keyModules {
+    module: "Module" w1
+    features: "Core Features" w2
+    notes: "Notes" w1
   }
-  rows features [
-    { name: "A", description: null, priority: true }
+  rows keyModules [
+    { module: "A", features: null, notes: true }
   ]
 }

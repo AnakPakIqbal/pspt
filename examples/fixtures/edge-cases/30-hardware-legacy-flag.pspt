@@ -1,0 +1,6 @@
+doc "Legacy Hardware Flag" type=projectBrief
+hardware: true
+
+section brief {
+  overview: "The suite has no hardware section; the flag above should warn."
+}

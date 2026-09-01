@@ -1,0 +1,6 @@
+doc "Object Block" type=projectBrief
+
+section brief {
+  object headerFooterLabels { productNameLabel: "Acme Widget" }
+  object metadata { writer: "Jane Doe", status: "Draft", version: "V1", lastUpdate: "Sept 1, 2026" }
+}

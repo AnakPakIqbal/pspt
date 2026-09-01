@@ -1,0 +1,7 @@
+doc "Flat List Single Item" type=projectBrief
+
+section brief {
+  list deliverables {
+    item "Just one item, no children"
+  }
+}

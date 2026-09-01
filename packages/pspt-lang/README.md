@@ -1,9 +1,9 @@
 # pspt-lang — the `.pspt` DSL
 
-A small, hand-written language for authoring product specs (docx) and project
-trackers (xlsx) without writing JavaScript. It mirrors the shape the underlying
-SDKs already use (sections, tables, key/value fields) rather than inventing new
-concepts — there are no loops, conditionals, or imports by design.
+A small, hand-written language for authoring product documentation (docx) and
+project trackers (xlsx) without writing JavaScript. It mirrors the shape the
+underlying SDKs already use (sections, tables, key/value fields) rather than
+inventing new concepts — there are no loops, conditionals, or imports by design.
 
 `.pspt` source compiles to plain, readable JavaScript that calls
 [`pspt-docx`](../pspt-docx/README.md)'s or [`pspt-xlsx`](../pspt-xlsx/README.md)'s
@@ -13,21 +13,31 @@ existing setters. The generated file is never meant to be hand-edited — re-run
 Every parse/lex error includes a 1-based line and column number, since `.pspt`
 authors include non-developers and AI agents, not just engineers.
 
-## Two document types, one grammar
+## Document types
 
-The first line of every `.pspt` file declares the document title and, optionally,
-its type:
+The first line of every `.pspt` file declares the document title and its type:
 
 ```
-doc "My Document Title" type=docx
+doc "My Document Title" type=projectBrief
 ```
 
-- `type=docx` (default if omitted) compiles to a `pspt-docx` `ProductSpecSDK` script.
-- `type=xlsx` compiles to a `pspt-xlsx` `ExcelTrackerSDK` script.
+`type=` is **required** — there is no default. Valid values:
 
-The rest of the grammar differs depending on which type you picked (docx uses
-`section`/`table`/`rows`/`list`; xlsx uses `calendar`/`group`/`task`/`callout`) —
-see the two sections below.
+| `type=`                                                                                                                                                  | Compiles to                                               |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `master`                                                                                                                                                 | A `MasterDocument` assembling all 15 Parts into one .docx |
+| `picMatrix`                                                                                                                                              | The PIC Matrix / Documentation SOP front matter           |
+| `styleGuide` `projectBrief` `brd` `prd` `srs` `techDoc` `uiux` `uat` `deploymentGuide` `userManual` `changelog` `changeRequestLog` `glossary` `appendix` | That single Part's SDK (Parts 1–14)                       |
+| `xlsx`                                                                                                                                                   | A `pspt-xlsx` `ExcelTrackerSDK` script                    |
+
+> **`type=docx` was removed.** It referred to the single-document
+> `ProductSpecSDK`, which no longer exists — the compiler rejects it with a
+> message naming the replacement. See
+> [pspt-docx's migration table](../pspt-docx/README.md#migrating-from-productspecsdk).
+
+The rest of the grammar depends on which type you picked — docx Parts use
+`section`/`table`/`rows`/`list`/`object` (and `part` in a `master` file); xlsx
+uses `calendar`/`group`/`task`/`callout`.
 
 ## Comments
 
@@ -35,7 +45,7 @@ see the two sections below.
 
 ```
 # a full-line comment
-doc "My Doc" type=docx  // trailing comment
+doc "My Doc" type=projectBrief  // trailing comment
 ```
 
 ## Values
@@ -56,72 +66,130 @@ Every field/attribute value is one of:
 ### Structure
 
 ```
-doc "Product Spec" type=docx
-
-hardware: true   # optional — turns on the Hardware Specification section
+doc "Project Brief" type=projectBrief
 
 section <name> {
   <field> : <value>
-  table <name> { <col>: "<Header>" [w<weight>]  ... }
-  rows <name> [ { <field>: <value>, ... }, ... ]
-  list <name> { item "<title>" { item "<title>" ... } }
+  object <name> { <key>: <value>, ... }
+  list   <name> { item "<text>" { item "<text>" ... } }
+  table  <name> { <col>: "<Header>" [w<weight>]  ... }
+  rows   <name> [ { <field>: <value>, ... }, ... ]
 }
 ```
 
 You can have as many `section { ... }` blocks as you like; they're purely an
-authoring convenience — the codegen looks at each `field`/`table`/`rows`/`list`
-inside every section for a matching setter, not the section name itself. Grouping
-related fields into sections just keeps the source readable.
+authoring convenience — the codegen looks at each field/object/list/table inside
+every section for a matching setter, not the section name itself. Grouping
+related content into sections just keeps the source readable.
 
-### Free-text and scalar fields
+### Which construct to use
 
-A bare `field: value` line maps directly onto the matching `ProductSpecSDK`
-setter, using the exact same data-key names as `ProductSpecSDK`'s internal
-`this.data` object (which mirror the setter names — see
-[pspt-docx's README](../pspt-docx/README.md) for the full field-name list):
+Every name — a field name, an `object`/`list`/`table` name — is a **data key**:
+the setter name minus its `set` prefix, lowercased at the front. `overview:`
+means `setOverview`, `table keyModules` means `setKeyModules`.
+
+Which of the four constructs you write is decided by what the setter expects,
+and the compiler knows that because it reads the Part SDK's own
+`sectionGuide()` at compile time — the mapping cannot drift out of sync with
+the SDK:
+
+| Setter takes         | You write                            | Compiles to                       |
+| -------------------- | ------------------------------------ | --------------------------------- |
+| a string/number/bool | `overview: "..."`                    | `doc.setOverview('...')`          |
+| an array of strings  | `list objectives { item "..." }`     | `doc.setObjectives(['...'])`      |
+| an array of objects  | `table x { ... }` + `rows x [ ... ]` | `doc.setX([{...}])`               |
+| a single object      | `object metadata { writer: "..." }`  | `doc.setMetadata({writer:'...'})` |
+
+Use the wrong one and you get a `// WARNING:` comment naming the right one —
+never a silently corrupted document:
 
 ```
-section overview {
-  executiveSummary: "Acme Widget is a widget-connecting widget."
+// WARNING: 'metadata' (line 4) maps to setMetadata, which expects an object
+// payload, not a plain value — skipped. Use `object metadata { key: value }`.
+```
+
+A name with no setter behind it is also skipped with a warning, and gets a
+spelling suggestion when it's close to a real one (`did you mean 'overview'?`).
+**Always check generated `.gen.js` files for `WARNING` comments after
+compiling.**
+
+To see every data key a Part accepts, ask its SDK directly:
+
+```js
+const { ProjectBriefSDK } = require('pspt-docx');
+console.log(ProjectBriefSDK.sectionGuide());
+```
+
+### Reserved words as data keys
+
+Data keys come from the SDKs, which know nothing about this grammar's reserved
+words — `setNamingConventions` really does take an `item` key, and a table
+column can legitimately be called `type` or `status`. So a keyword is treated
+as a plain name wherever a name is expected (field names, table and column
+names, row keys, object keys), and a `<keyword>: <value>` line is always read as
+a field rather than the start of a block:
+
+```
+table namingConventions {
+  item:       "Item"       w1
+  convention: "Convention" w1
+}
+```
+
+### Fields and object blocks
+
+```
+section brief {
+  overview: "Acme Widget lets small teams submit expenses from their phones."
+
+  object headerFooterLabels { productNameLabel: "Acme Widget" }
+  object metadata { writer: "Jane Doe", status: "Draft", version: "V1", lastUpdate: "Sept 1, 2026" }
 }
 ```
 
 compiles to:
 
 ```js
-doc.setExecutiveSummary('Acme Widget is a widget-connecting widget.');
+doc.setOverview('Acme Widget lets small teams submit expenses from their phones.');
+doc.setHeaderFooterLabels({ productNameLabel: 'Acme Widget' });
+doc.setMetadata({ writer: 'Jane Doe', status: 'Draft', version: 'V1', lastUpdate: 'Sept 1, 2026' });
 ```
 
-If a field name has no matching setter, it's skipped with a `// WARNING:`
-comment in the generated JS rather than failing the whole compile — check for
-these after every `pspt compile`.
+Commas between `object` entries are optional. Object values are scalars only —
+there is no nested-object-inside-object syntax; the handful of setters wanting
+deeper nesting (`BrdSDK.setRaci`, `TechnicalDocumentationSDK.setEndpoints`,
+`UserManualSDK.setFeatureWalkthroughs`) still need the direct SDK API.
 
-**Image/diagram path fields** (`logoImagePath`, `diagramImagePath`, etc.) are
-plain string fields — pass a real file path and the SDK embeds it, omit it (or
-pass a path that doesn't exist) and the SDK draws a placeholder box. No special
-grammar is needed for these.
+**Every Part you generate wants `object headerFooterLabels { productNameLabel: "..." }`** —
+it's what fills that Part's running header. Skip it and the header reads
+"Product name/logo".
 
-**Known limitation:** fields whose setter expects an _object_ payload (e.g.
-`setCoverPage({productName, shortDescription, lastUpdated, status})`,
-`setApis({rows, docsLink})`, `setPricingModel({modelDescription, tiers})`) are
-not yet expressible as a nested object literal in this grammar version — a bare
-`cover: "..."` field maps to one of these, and the compiler will emit a
-`// WARNING:` and skip it rather than silently passing a broken shape. Use the
-direct SDK API (see [pspt-docx](../pspt-docx/README.md)) for these fields until
-nested-field DSL syntax is added.
+### Lists
+
+```
+section brief {
+  list objectives {
+    item "Cut expense processing time by 70%"
+    item "Achieve 90% team adoption within Q4"
+  }
+}
+```
+
+becomes `doc.setObjectives([...])`. These setters take flat lists of strings, so
+a nested `{ item "..." }` block parses fine but its children are dropped with a
+warning saying so.
 
 ### Tables
 
 ```
-section business {
-  table features {
-    name:        "Feature Name" w1
-    description: "Description"  w2
-    priority:    "Priority"     w1
+section brief {
+  table keyModules {
+    module:   "Module"        w1
+    features: "Core Features" w2.5
   }
-  rows features [
-    { name: "Auth", description: "OAuth2 login", priority: "Must" },
-    { name: "Dashboard", description: "Usage overview", priority: "Should" },
+  rows keyModules [
+    { module: "Receipts",  features: "Photo capture + OCR" },
+    { module: "Approvals", features: "One-tap approve/reject" },
   ]
 }
 ```
@@ -131,57 +199,78 @@ section business {
   to default to `1`. It must immediately follow the header string with no comma.
 - `rows <name> [ {...}, {...} ]` supplies the row data — a trailing comma after
   the last row is allowed.
-- The table `name` must match a docx data key with a known array-typed setter
-  (`features`, `productRoadmap`, `targetMarket`, `technologyStack`, etc. — see
-  [pspt-docx](../pspt-docx/README.md) for the complete list). An unrecognized
-  table name produces a `// WARNING:` and is skipped.
-- **A `rows` block with no matching `table` of the same name in the same
-  section is also skipped with a `// WARNING:`** — always check for this if
-  your table data doesn't seem to show up; it usually means a typo in the name.
-- Omitting `rows` entirely for a declared table is fine — the underlying SDK
-  renders its placeholder row automatically when no real data is supplied.
+- A `table` is paired with the **next** `rows` block of the same name, so two
+  sections can each declare a `table keyModules` without their rows crossing.
+- **A `rows` block with no matching `table` is skipped with a `// WARNING:`** —
+  check for this if your table data doesn't show up; it usually means a typo.
+- Omitting `rows` entirely for a declared table is fine — the SDK renders its
+  own placeholder row when no real data is supplied.
 
-### Nested numbered lists (Security section)
+### Nested values inside a row
 
-The `setSecurity({measures, notes})` payload is expressed with a `list` block
-named `measures`, plus an optional sibling `notes:` field:
+A row cell can itself be a `[list]` or an `{object}`. Several setters take
+payloads that need it — an endpoint's request and response body, an entity's
+column list, a user story's Given/When/Then bullets:
 
 ```
-section technical {
-  list measures {
-    item "Cloudflare" {
-      item "WAF"
-      item "Turnstile"
-    }
-    item "Cloud Armor" {
-      item "Rate limiting"
-    }
+rows endpoints [
+  {
+    method: "POST",
+    path: "/tasks",
+    description: "Creates a task.",
+    requestBody: [ "{", "  \"name\": \"string\"", "}" ],
+    responseBody: [ "{ \"id\": \"uuid\" }" ],
+    errors: "Errors: 422 on validation failure."
   }
-  notes: "Data encrypted at rest and in transit; secrets stored in a managed vault."
+]
+
+rows entityDetails [
+  {
+    tableName: "tasks",
+    columns: [
+      { column: "id", type: "CHAR(36)", constraints: "PK", description: "Identifier" }
+    ]
+  }
+]
+```
+
+Both forms nest arbitrarily and allow a trailing comma.
+
+### Authoring the whole master document
+
+In a `type=master` file, wrap each Part's content in a `part <key> { ... }`
+block. The body is exactly the same grammar as a section body, so a Part can be
+lifted into its own `type=<key>` file (or folded back in) without rewriting it:
+
+```
+doc "Acme Widget — Product Documentation" type=master
+
+part projectBrief {
+  object headerFooterLabels { productNameLabel: "Acme Widget" }
+  overview: "Acme Widget lets small teams submit and approve expenses from their phones."
+}
+
+part glossary {
+  table terms {
+    term:       "Term"       w1
+    definition: "Definition" w3
+  }
+  rows terms [
+    { term: "OCR", definition: "Optical Character Recognition" }
+  ]
 }
 ```
 
-- Each top-level `item "..."` becomes a numbered entry (`1.`, `2.`, ...).
-- A nested `{ item "..." ... }` block becomes the lettered sub-list (`a.`, `b.`,
-  ...) under that entry.
-- Nesting is only rendered one level deep by the underlying `numberedBlock()`
-  renderer — a third nesting level parses fine but is flattened into the same
-  lettered sub-list rather than gaining its own further indent.
-- `notes:` is consumed as part of the `setSecurity` call and is _not_ also
-  emitted as a separate field — this is intentional, not a bug.
-- A `list` block with any name other than `measures` has no known consumer yet
-  and is skipped with a `// WARNING:`.
+Parts you leave out still render, as their own blank template, so this produces
+a complete document rather than a document with holes in it. A `part` block in a
+single-Part file — or a `section` sitting outside every `part` in a master file —
+is skipped with a `// WARNING:`.
 
-### Hardware section toggle
+### Legacy `hardware:` flag
 
-```
-doc "My Device" type=docx
-hardware: true
-```
-
-Must appear directly after the `doc` line (before any `section` blocks). Only
-`true`/`false` are valid — any other value type is a parse error. Omitting the
-line entirely leaves hardware off (the `ProductSpecSDK` default).
+`hardware: true` still parses (it toggled the old `ProductSpecSDK`'s hardware
+section) but has no effect — the documentation suite has no hardware section.
+The compiler emits a `// WARNING:` telling you to delete the line.
 
 ## Xlsx trackers
 
@@ -240,13 +329,13 @@ run `pspt scan-git --with-lines` first and copy the relevant numbers in — see
 See [`examples/fixtures/sample-docx.pspt`](../../examples/fixtures/sample-docx.pspt)
 and [`examples/fixtures/sample-xlsx.pspt`](../../examples/fixtures/sample-xlsx.pspt)
 in the repo root for complete, runnable files exercising most of the grammar
-above (hardware toggle, tables+rows, nested security list, xlsx calendar +
-multiple groups + callout).
+above (a `type=master` file filling four Parts with object blocks, lists and
+tables+rows; xlsx calendar + multiple groups + callout).
 
-[`examples/fixtures/edge-cases/`](../../examples/fixtures/edge-cases/) has ~40
+[`examples/fixtures/edge-cases/`](../../examples/fixtures/edge-cases/) has ~50
 additional fixtures covering edge cases (empty sections, decimal weights, hex
-colors, CRLF line endings, unicode/escapes, deliberately invalid syntax to see
-the exact error messages, etc.) if you want to see the grammar's exact
+colors, CRLF line endings, unicode/escapes, every warning path, and deliberately
+invalid syntax to see the exact error messages) if you want to see the grammar's exact
 boundaries.
 
 ## Compiling and running

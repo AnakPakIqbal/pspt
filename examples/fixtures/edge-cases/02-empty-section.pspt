@@ -1,4 +1,4 @@
-doc "Empty Section" type=docx
+doc "Empty Section" type=projectBrief
 
 section overview {
 }

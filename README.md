@@ -1,15 +1,15 @@
 # pspt
 
-`pspt` unifies two document generators — a Word (.docx) product-spec builder and an
-Excel (.xlsx) Gantt tracker builder — behind one shared core, one CLI, and one small
-DSL (`.pspt` files) so you can author specs/trackers without writing JS by hand.
+`pspt` unifies two document generators — a Word (.docx) product-documentation suite and
+an Excel (.xlsx) Gantt tracker builder — behind one shared core, one CLI, and one small
+DSL (`.pspt` files) so you can author documents/trackers without writing JS by hand.
 
 ## Packages
 
 | Package     | Purpose                                                                                                    | Docs                                                         |
 | ----------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | `pspt-core` | Shared design tokens, table/column-schema, placeholder rule, date/border/color helpers, git-scan utilities | (internal — no public docs, see source)                      |
-| `pspt-docx` | `ProductSpecSDK` — generates Word product-spec documents                                                   | [packages/pspt-docx/README.md](packages/pspt-docx/README.md) |
+| `pspt-docx` | The Product Documentation Master suite — 15 Word (.docx) Part SDKs plus `MasterDocument`                   | [packages/pspt-docx/README.md](packages/pspt-docx/README.md) |
 | `pspt-xlsx` | `ExcelTrackerSDK` — generates Excel Gantt project trackers                                                 | [packages/pspt-xlsx/README.md](packages/pspt-xlsx/README.md) |
 | `pspt-lang` | The `.pspt` DSL — lexer/parser/codegen, compiles to plain JS                                               | [packages/pspt-lang/README.md](packages/pspt-lang/README.md) |
 | `pspt-cli`  | The `pspt` command-line tool: `compile`, `build`, `scan-git`                                               | [packages/pspt-cli/README.md](packages/pspt-cli/README.md)   |
@@ -29,10 +29,11 @@ together, so `require('pspt-core')` etc. resolve without any manual linking.
 ### 1. Write a `.pspt` file and use the CLI (recommended for most authors)
 
 ```
-doc "Acme Widget Spec" type=docx
+doc "Acme Widget Project Brief" type=projectBrief
 
-section overview {
-  executiveSummary: "Acme Widget lets teams connect other widgets together."
+section brief {
+  object headerFooterLabels { productNameLabel: "Acme Widget" }
+  overview: "Acme Widget lets teams connect other widgets together."
 }
 ```
 
@@ -47,10 +48,11 @@ every CLI command.
 ### 2. Call the SDKs directly from JS
 
 ```js
-const ProductSpecSDK = require('pspt-docx');
-const doc = new ProductSpecSDK();
-doc.setExecutiveSummary('Acme Widget lets teams connect other widgets together.');
-await doc.generate('./my-spec.docx');
+const { ProjectBriefSDK } = require('pspt-docx');
+const doc = new ProjectBriefSDK();
+doc.setHeaderFooterLabels({ productNameLabel: 'Acme Widget' });
+doc.setOverview('Acme Widget lets teams connect other widgets together.');
+await doc.generate('./my-brief.docx');
 ```
 
 See [packages/pspt-docx/README.md](packages/pspt-docx/README.md) and
@@ -103,12 +105,12 @@ versions you're confident in before publishing for real (dry-run first with
 pspt/
   packages/
     pspt-core/    shared tokens, table schema, placeholder rule, helpers, git-scan
-    pspt-docx/    ProductSpecSDK (Word/.docx)
+    pspt-docx/    Product Documentation Master suite (Word/.docx)
     pspt-xlsx/    ExcelTrackerSDK (Excel/.xlsx Gantt tracker)
     pspt-lang/    .pspt DSL: lexer, parser, codegen
     pspt-cli/     `pspt` bin: compile / build / scan-git
   examples/
-    example-usage.js            direct ProductSpecSDK usage (ported from product-spec-sdk)
+    example-usage.js            direct pspt-docx usage (MasterDocument + a single Part)
     example-tracker-usage.js    direct ExcelTrackerSDK usage (ported from product-spec-sdk)
     fixtures/*.pspt              sample .pspt files (docx + xlsx)
     fixtures/edge-cases/*.pspt   DSL edge-case test fixtures (valid + invalid syntax)
@@ -116,12 +118,14 @@ pspt/
 
 ## Design notes worth knowing before you dig in
 
-- **Every method from the original SDKs is preserved.** `pspt-docx` still has all
-  ~50 `set*()` methods across the 6 document sections (cover, business, functional,
-  technical, optional hardware, UI/UX, QA), and `pspt-xlsx` still has every method
-  of the original `ExcelTrackerSDK` (`addSection`, `addCallout`, calendar/Gantt
-  rendering, etc.) — nothing was cut during the refactor into `pspt-core` +
-  adapters.
+- **`pspt-docx` is a suite, not one document.** It carries 184 `set*()` methods
+  across 15 Part SDKs (PIC Matrix front matter plus Parts 1-14), each generating a
+  self-contained mini-document, and a `MasterDocument` that assembles them into one
+  file. It replaced the earlier single-document `ProductSpecSDK`, whose hardware
+  sections have no equivalent — see
+  [packages/pspt-docx/README.md](packages/pspt-docx/README.md#migrating-from-productspecsdk).
+  `pspt-xlsx` still has every method of the original `ExcelTrackerSDK`
+  (`addSection`, `addCallout`, calendar/Gantt rendering, etc.).
 - **`addCallout`/`this.callouts` is pre-existing dead code** in `pspt-xlsx`: it's
   stored but never actually rendered onto the worksheet. This was true in the
   original `excel-tracker-sdk.js` too — it was not introduced by this refactor.

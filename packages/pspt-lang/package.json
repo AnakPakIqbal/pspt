@@ -1,7 +1,7 @@
 {
   "name": "pspt-lang",
-  "version": "1.0.0",
-  "description": "Hand-written lexer/parser/codegen for the .pspt DSL, compiling to plain JS calling pspt-docx/pspt-xlsx setters.",
+  "version": "2.0.0",
+  "description": "Hand-written lexer/parser/codegen for the .pspt DSL, compiling to plain JS calling the pspt-docx Part SDKs / pspt-xlsx setters.",
   "main": "src/index.js",
   "files": [
     "src"
@@ -20,5 +20,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "pspt-docx": "^2.0.0"
   }
 }

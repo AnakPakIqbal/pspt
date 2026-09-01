@@ -1,4 +1,4 @@
-doc "Task Inside Section" type=docx
+doc "Task Inside Section" type=projectBrief
 
 section overview {
   task "Should not be allowed here"

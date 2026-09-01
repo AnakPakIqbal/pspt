@@ -1,199 +1,154 @@
 # pspt-docx
 
-`ProductSpecSDK` generates a Word (.docx) "Product Specification" document with a
-fixed, consistent visual style (Arial throughout, navy/blue heading colors,
-navy-header/white-text tables, US-Letter page size, header/footer, cover page).
-It's a lift-and-adapt port of the original `product-spec-sdk.js` — every setter,
-section, and rendering behavior is preserved; only the shared tokens/helpers now
-come from [`pspt-core`](../pspt-core).
+Generates the **Product Documentation Master** — a Word (.docx) document suite
+made of a PIC Matrix front-matter section followed by 14 numbered Parts (Style
+Guide, Project Brief, BRD, PRD, SRS, Technical Documentation, UI/UX, UAT,
+Deployment Guide, User Manual, Changelog, Change Request Log, Glossary,
+Appendix).
 
-You call whichever `set*()` methods you have real content for; anything you skip
-renders as italicized `[...]` placeholder text, so a human reviewer can see
-exactly what's still missing. Calling `generate()` with zero setter calls
-reproduces the blank template exactly.
+Each Part is a self-contained mini-document with its own title page and running
+header, driven by `set...()` methods. You never touch styling — fonts, colors,
+table styles, page setup and header/footer chrome all come from the shared
+tokens in [`src/sdk/pspt-core.js`](src/sdk/pspt-core.js).
+
+> Replaces the earlier single-document `ProductSpecSDK`. That class and its
+> `setCoverPage`/`setExecutiveSummary`/`setEnableHardwareSection` API are gone —
+> see [Migrating from ProductSpecSDK](#migrating-from-productspecsdk) below.
 
 ## Install
 
 ```js
-const ProductSpecSDK = require('pspt-docx');
+const { ProjectBriefSDK, MasterDocument } = require('pspt-docx');
 ```
 
-## Quick start
+## Generate one Part
 
 ```js
-const ProductSpecSDK = require('pspt-docx');
+const { ProjectBriefSDK } = require('pspt-docx');
 
-async function main() {
-  const doc = new ProductSpecSDK();
+const doc = new ProjectBriefSDK();
+doc.setHeaderFooterLabels({ productNameLabel: 'Acme Widget' });
+doc.setOverview('Acme Widget lets small teams submit and approve expenses from their phones.');
+doc.setObjectives(['Cut expense processing time by 70%']);
+doc.setKeyModules([{ module: 'Receipts', features: 'Photo capture + OCR amount extraction' }]);
 
-  doc.setCoverPage({
-    productName: 'Acme Widget',
-    shortDescription: 'A widget that connects other widgets.',
-    lastUpdated: '2026-07-22',
-    status: 'Draft',
-  });
-  doc.setExecutiveSummary('Acme Widget lets teams save time by connecting widgets automatically.');
-  doc.setFeatures([
-    { name: 'Push notifications', description: 'Real-time alerts', priority: 'Must' },
-  ]);
-
-  await doc.generate('./acme-widget-spec.docx');
-}
-
-main();
+await doc.generate('./02-project-brief.docx');
 ```
 
-Every setter returns `this`, so you can chain them:
+Every setter returns `this`, so calls chain. **Skipping a setter is fine** — the
+section still renders, using the template's own `[bracketed placeholder]` text,
+so a reviewer can see exactly what is still missing. `new AnySDK().generate()`
+with zero calls reproduces that Part's blank template exactly.
+
+## Generate the whole master document
+
+`MasterDocument` assembles every Part into one `.docx` in a single run. It does
+not merge packed files — because every Part is built by the same library with
+the same style ids, it concatenates their _sections_ into one `Document`, so
+there is no OOXML surgery and Word's "Page X of Y" fields resolve against the
+real total.
 
 ```js
-doc.setCoverPage({ productName: 'Acme Widget' })
-   .setExecutiveSummary('...')
-   .setFeatures([...]);
+const { MasterDocument } = require('pspt-docx');
+
+const master = new MasterDocument();
+master.setHeaderFooterLabels({ productNameLabel: 'Acme Widget' }); // applies to all 15
+
+master.part('projectBrief').setOverview('...').setObjectives(['...']);
+master.part('brd').setPurpose('...');
+
+await master.generate('./product-documentation-master.docx');
 ```
 
-## Discovering sections programmatically
+Parts you never touch still render as their blank template, so an unfinished
+suite still produces a clean, complete document.
+
+| Option                                                  | Effect                                                                                       |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `new MasterDocument({ include: ['picMatrix', 'brd'] })` | Assemble only those Parts, still in canonical order                                          |
+| `MasterDocument.parts()`                                | The ordered Part list — `{ key, part, title, heading }`, enough to build a table of contents |
+| `master.part(key)`                                      | The SDK instance for one Part, created on first access                                       |
+
+## The Parts
+
+| Key                |              | Class                       | Module                                                           |
+| ------------------ | ------------ | --------------------------- | ---------------------------------------------------------------- |
+| `picMatrix`        | front matter | `PicMatrixSDK`              | [pic-matrix-docx.js](src/sdk/pic-matrix-docx.js)                 |
+| `styleGuide`       | Part 1       | `StyleGuideSDK`             | [style-guide-docx.js](src/sdk/style-guide-docx.js)               |
+| `projectBrief`     | Part 2       | `ProjectBriefSDK`           | [project-brief-docx.js](src/sdk/project-brief-docx.js)           |
+| `brd`              | Part 3       | `BrdSDK`                    | [brd-docx.js](src/sdk/brd-docx.js)                               |
+| `prd`              | Part 4       | `PrdSDK`                    | [prd-docx.js](src/sdk/prd-docx.js)                               |
+| `srs`              | Part 5       | `SrsSDK`                    | [srs-docx.js](src/sdk/srs-docx.js)                               |
+| `techDoc`          | Part 6       | `TechnicalDocumentationSDK` | [tech-doc-docx.js](src/sdk/tech-doc-docx.js)                     |
+| `uiux`             | Part 7       | `UiUxSDK`                   | [uiux-docx.js](src/sdk/uiux-docx.js)                             |
+| `uat`              | Part 8       | `UatSDK`                    | [uat-docx.js](src/sdk/uat-docx.js)                               |
+| `deploymentGuide`  | Part 9       | `DeploymentGuideSDK`        | [deployment-guide-docx.js](src/sdk/deployment-guide-docx.js)     |
+| `userManual`       | Part 10      | `UserManualSDK`             | [user-manual-docx.js](src/sdk/user-manual-docx.js)               |
+| `changelog`        | Part 11      | `ChangelogSDK`              | [changelog-docx.js](src/sdk/changelog-docx.js)                   |
+| `changeRequestLog` | Part 12      | `ChangeRequestLogSDK`       | [change-request-log-docx.js](src/sdk/change-request-log-docx.js) |
+| `glossary`         | Part 13      | `GlossarySDK`               | [glossary-docx.js](src/sdk/glossary-docx.js)                     |
+| `appendix`         | Part 14      | `AppendixSDK`               | [appendix-docx.js](src/sdk/appendix-docx.js)                     |
+
+Part 6 is three mini-documents in one module: Technical Documentation, then Data
+Model (ERD), then API Specification.
+
+## Discovering an SDK's API
+
+Every class exposes a machine-readable section guide — the fastest way for a
+script or an agent to learn what a Part expects without reading the source:
 
 ```js
-const guide = ProductSpecSDK.sectionGuide(); // static, no instance needed
+console.log(ProjectBriefSDK.sectionGuide());
+// [{ method: 'setOverview', purpose: '...', example: '...' }, ...]
 ```
 
-Returns a machine-readable array of every section: `{ method, purpose, example }`.
-Useful for an AI agent (or a script) that wants to enumerate what content is
-expected without reading the source/JSDoc directly.
+**[`src/README.md`](src/README.md) is the full authoring reference** — every
+setter of every Part, the exact shape of its payload, and what to prepare before
+you start writing.
 
-## Enabling the Hardware Specification section
+## Layout
 
-Pure-software products should leave this off (the default). Hardware/IoT
-products should call:
-
-```js
-doc.setEnableHardwareSection(true);
+```
+src/
+├── index.js       package entry point (this is what `require('pspt-docx')` gives you)
+├── README.md      full authoring reference for all 15 Parts
+├── sdk/           the SDK modules — keep them together, they require each other by relative path
+└── sample-docs/   one example .docx per Part, generated with placeholder content
 ```
 
-This turns on the "2.4 Hardware Specification" block and the "Hardware
-Validation" table in Quality Control — both are skipped entirely otherwise.
+`src/sdk/` is deliberately self-contained: it depends only on `docx` and its own
+`pspt-core.js`, so the folder can be copied out and used standalone.
 
-## Setter reference
+## Shared tokens and primitives
 
-All setters accept plain JS values/arrays/objects; see the JSDoc directly above
-each method in [`src/product-spec-sdk.js`](src/product-spec-sdk.js) for the
-exact expected shape of every parameter. Table-shaped rows are always an array
-of plain objects keyed exactly as shown.
+[`src/sdk/pspt-core.js`](src/sdk/pspt-core.js) is the single source of truth for
+the suite's look — font, sizes, colors, page geometry — plus the paragraph and
+table primitives every Part shares (`run`, `h1`/`h2`/`h3`, `guidanceNote`,
+`bullet`, `codeBlock`, `checklistItem`, `buildZebraTable`, …). Change a value
+there and it ripples through all 15 Parts, which is the point; hand-tuning a
+value inside a single Part module is how the suite drifts out of sync.
 
-### Cover
+Note this is a _different_ file from the `pspt-core` workspace package, which
+carries the Arial-based token set used by `pspt-xlsx`. This suite's tokens are
+Calibri-based and were extracted from the master template's own XML.
 
-| Setter            | Shape                                                                    |
-| ----------------- | ------------------------------------------------------------------------ |
-| `setCoverPage(p)` | `{ productName, shortDescription, lastUpdated, status, logoImagePath? }` |
+## Migrating from ProductSpecSDK
 
-### 1. Product Overview
+The old single-document `ProductSpecSDK` is gone. Its content maps onto the new
+Parts roughly as follows:
 
-| Setter                      | Shape                                   |
-| --------------------------- | --------------------------------------- |
-| `setProductInfo(p)`         | `{ productName, version, status }`      |
-| `setExecutiveSummary(text)` | string                                  |
-| `setProductRoadmap(rows)`   | `{ phase, theme, timeframe, status }[]` |
+| Old setter                                                                                                                                       | Now lives in                                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `setCoverPage`, `setProductInfo`                                                                                                                 | `PicMatrixSDK.setCoverInfo`                                             |
+| `setExecutiveSummary`, `setProductRoadmap`                                                                                                       | `ProjectBriefSDK` / `PrdSDK.setRoadmap`                                 |
+| `setTargetMarket`, `setCustomerPersonas`, `setUseCases`, `setCompetitiveAnalysis`, `setPricingModel`                                             | `BrdSDK` (use cases, actors, RACI) and `PrdSDK.setTargetAudience`       |
+| `setFeatures`                                                                                                                                    | `PrdSDK.setRequirements` → `SrsSDK.setFunctionalRequirements`           |
+| `setSystemArchitecture`, `setTechnologyStack`, `setApis`, `setDatabaseDesign`, `setSecurity`, `setMonitoring`, `setLogging`, `setBackupStrategy` | `TechnicalDocumentationSDK` (all three sub-documents)                   |
+| `setDesignTools`, `setTypography`, `setColorPalette`, `setComponentsStates`, `setResponsiveBehavior`                                             | `UiUxSDK` and `StyleGuideSDK`                                           |
+| `setTestStrategy`, `setTestPlan`, `setTestCases`, `setBugTracking`                                                                               | `UatSDK`                                                                |
+| `setEnableHardwareSection` and the hardware setters                                                                                              | **no equivalent** — the new suite is written for pure-software products |
 
-### 2.1 Business Perspective
+## Authoring via the `.pspt` DSL
 
-| Setter                         | Shape                                                                     |
-| ------------------------------ | ------------------------------------------------------------------------- |
-| `setTargetMarket(rows)`        | `{ segment, description }[]`                                              |
-| `setCustomerPersonas(rows)`    | `{ persona, role, goals, painPoints, buyingBehavior }[]`                  |
-| `setUserJourney(p)`            | `{ imagePath?, caption?, widthPx?, heightPx? }`                           |
-| `setUseCases(rows)`            | `{ useCase, actor, trigger, outcome }[]`                                  |
-| `setCompetitiveAnalysis(rows)` | `{ competitor, strengths, weaknesses, pricing, differentiator }[]`        |
-| `setPricingModel(p)`           | `{ modelDescription, tiers: { tier, price, includes, targetSegment }[] }` |
-| `setRevenueModel(text)`        | string                                                                    |
-
-### 2.2 Functional Specification
-
-| Setter              | Shape                                                             |
-| ------------------- | ----------------------------------------------------------------- |
-| `setFeatures(rows)` | `{ name, description, priority }[]` (priority: Must/Should/Could) |
-
-### 2.3 Technical Specification
-
-| Setter                     | Shape                                                                              |
-| -------------------------- | ---------------------------------------------------------------------------------- |
-| `setSystemArchitecture(p)` | `{ description, diagramImagePath? }`                                               |
-| `setTechnologyStack(rows)` | `{ layer, technology, justification }[]`                                           |
-| `setApis(p)`               | `{ rows: { endpoint, method, description, authRequired, role }[], docsLink? }`     |
-| `setDatabaseDesign(p)`     | `{ rows: { table, purpose, keyFields, url }[], diagramImagePath? }`                |
-| `setAuthentication(text)`  | string                                                                             |
-| `setSecurity(p)`           | `{ measures: { title, children? }[], notes? }` — renders as a nested numbered list |
-| `setMonitoring(text)`      | string                                                                             |
-| `setLogging(text)`         | string                                                                             |
-| `setBackupStrategy(text)`  | string                                                                             |
-
-### 2.4 Hardware Specification (only rendered if `setEnableHardwareSection(true)`)
-
-| Setter                               | Shape                                                        |
-| ------------------------------------ | ------------------------------------------------------------ |
-| `setHardwareOverview(text)`          | string                                                       |
-| `setHardwareComponents(rows)`        | `{ component, function, vendor, altVendor }[]`               |
-| `setBillOfMaterials(rows)`           | `{ partNo, description, qty, unitCost, vendor, leadTime }[]` |
-| `setMechanicalDesign(p)`             | `{ description, diagramImagePath? }`                         |
-| `setElectricalSpecification(p)`      | `{ description, diagramImagePath? }`                         |
-| `setSensors(rows)`                   | `{ sensor, type, range, accuracy, purpose }[]`               |
-| `setConnectivity(text)`              | string                                                       |
-| `setPowerRequirements(text)`         | string                                                       |
-| `setFirmware(text)`                  | string                                                       |
-| `setCertifications(rows)`            | `{ certification, region, status, targetDate }[]`            |
-| `setEnvironmentalRequirements(text)` | string                                                       |
-| `setManufacturingNotes(text)`        | string                                                       |
-| `setMaintenance(text)`               | string                                                       |
-
-### 3. UI/UX Specification
-
-| Setter                          | Shape                                                                                |
-| ------------------------------- | ------------------------------------------------------------------------------------ |
-| `setDesignTools(rows)`          | `{ category, tool, link }[]`                                                         |
-| `setDesignPrinciples(text)`     | string                                                                               |
-| `setLayoutGrid(rows)`           | `{ property, value }[]`                                                              |
-| `setTypography(rows)`           | `{ weight, sizes }[]` (first row typically `{weight:'Font family', sizes:'<name>'}`) |
-| `setColorPalette(rows)`         | `{ role, color, hex }[]`                                                             |
-| `setComponentsStates(rows)`     | `{ component, state, behavior }[]`                                                   |
-| `setResponsiveBehavior(rows)`   | `{ breakpoint, device, notes }[]`                                                    |
-| `setInteractionAnimation(rows)` | `{ aspect, notes }[]`                                                                |
-| `setRevisionHistory(rows)`      | `{ version, date, changes }[]`                                                       |
-
-### 4. Quality Control
-
-| Setter                        | Shape                                                                                      |
-| ----------------------------- | ------------------------------------------------------------------------------------------ |
-| `setTestStrategy(text)`       | string                                                                                     |
-| `setTestPlan(rows)`           | `{ phase, scope, entryCriteria, exitCriteria }[]`                                          |
-| `setTestCases(rows)`          | `{ id, description, steps, expectedResult, status }[]`                                     |
-| `setBugTracking(rows)`        | `{ severity, definition, sla }[]`                                                          |
-| `setSecurityTesting(text)`    | string                                                                                     |
-| `setHardwareValidation(rows)` | `{ type, description, standard, result }[]` — only rendered if hardware section is enabled |
-
-## Images and diagrams
-
-Any field ending in `ImagePath` (`logoImagePath`, `diagramImagePath`, ...)
-follows the same rule: pass a real, existing file path and it's embedded;
-omit it (or point at a path that doesn't exist) and a bordered placeholder box
-is drawn instead, in the same visual style as the rest of the template.
-
-Architecture/ER/CAD/circuit diagrams are expected to be authored externally
-(e.g. as Mermaid `.mmd` source, rendered to PNG via `mermaid-cli`) and passed
-in as a `diagramImagePath` — this SDK has no Mermaid-rendering capability of
-its own.
-
-## Output
-
-```js
-await doc.generate('/path/to/output.docx'); // writes to disk
-const buf = await doc.toBuffer(); // or get a Buffer directly
-```
-
-## Using it via the `.pspt` DSL instead
-
-If you'd rather author specs in a terser, non-JS format, see
-[`pspt-lang`](../pspt-lang/README.md) — it compiles `.pspt` files into scripts
-that call this same SDK. Note the DSL currently only supports scalar/table
-fields; a handful of setters that expect a nested _object_ payload (`setCoverPage`,
-`setApis`, `setPricingModel`, `setSystemArchitecture`, `setDatabaseDesign`,
-`setUserJourney`, `setMechanicalDesign`, `setElectricalSpecification`) aren't yet
-expressible in the DSL grammar and must be set via direct SDK calls for now.
+[`pspt-lang`](../pspt-lang/README.md) compiles `.pspt` files into scripts that
+call these SDKs — see its README for the per-Part `type=` declarations.

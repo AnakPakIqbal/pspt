@@ -1,4 +1,4 @@
-doc "Unterminated Section" type=docx
+doc "Unterminated Section" type=projectBrief
 
 section overview {
   executiveSummary: "missing closing brace"

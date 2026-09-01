@@ -36,7 +36,9 @@ Compiles a `.pspt` source file to `<file>.gen.js` next to it (plain JS calling
 `pspt-docx`/`pspt-xlsx` setters — see [pspt-lang](../pspt-lang/README.md) for
 what the generated code looks like). Does **not** run it.
 
-Prints `Compiled <file> -> <file>.gen.js (type=docx|xlsx)` on success.
+Prints `Compiled <file> -> <file>.gen.js (type=<docType>)` on success, where
+`<docType>` is the `type=` from the file's `doc` line (`master`, a Part key such
+as `projectBrief`, or `xlsx`).
 
 On a lex/parse error, prints `pspt: <file>: Line N, col M: <message>` and exits
 with a non-zero status — no partial `.gen.js` is written.

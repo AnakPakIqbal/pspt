@@ -1,5 +1,5 @@
-doc "Escapes and Unicode" type=docx
+doc "Escapes and Unicode" type=projectBrief
 
 section overview {
-  executiveSummary: "Line one\nLine two with a \"quoted\" word and backslash \\ and emoji 🚀 and 中文字符."
+  overview: "Line one\nLine two with a \"quoted\" word and backslash \\ and emoji 🚀 and 中文字符."
 }

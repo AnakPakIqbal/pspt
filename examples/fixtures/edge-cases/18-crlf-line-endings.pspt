@@ -1,5 +1,5 @@
-doc "CRLF Test" type=docx
+doc "CRLF Test" type=projectBrief
 
 section overview {
-  executiveSummary: "Uses CRLF line endings throughout"
+  overview: "Uses CRLF line endings throughout"
 }

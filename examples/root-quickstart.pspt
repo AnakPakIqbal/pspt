@@ -1,0 +1,7 @@
+// The quickstart snippet from the repo-root README, as a real compilable file.
+doc "Acme Widget Project Brief" type=projectBrief
+
+section brief {
+  object headerFooterLabels { productNameLabel: "Acme Widget" }
+  overview: "Acme Widget lets teams connect other widgets together."
+}

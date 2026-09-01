@@ -1,0 +1,15 @@
+doc "Acme Widget Documentation" type=master
+
+part projectBrief {
+  overview: "Assembled straight into the master document."
+}
+
+part glossary {
+  table terms {
+    term:       "Term"       w1
+    definition: "Definition" w3
+  }
+  rows terms [
+    { term: "OCR", definition: "Optical Character Recognition" }
+  ]
+}

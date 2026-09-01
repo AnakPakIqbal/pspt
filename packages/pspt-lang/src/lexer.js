@@ -25,6 +25,8 @@ const KEYWORDS = new Set([
   'hardware',
   'list',
   'item',
+  'object',
+  'part',
   'color',
   'true',
   'false',
@@ -216,4 +218,4 @@ function tokenize(source) {
   return tokens;
 }
 
-module.exports = { tokenize, LexError };
+module.exports = { tokenize, LexError, KEYWORDS };

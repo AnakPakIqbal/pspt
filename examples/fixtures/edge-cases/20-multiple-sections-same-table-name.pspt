@@ -1,21 +1,21 @@
-doc "Duplicate Table Name Across Sections" type=docx
+doc "Duplicate Table Name Across Sections" type=projectBrief
 
 section business {
-  table features {
-    name: "Feature Name" w1
-    description: "Description" w2
+  table keyModules {
+    module: "Module" w1
+    features: "Core Features" w2
   }
-  rows features [
-    { name: "Business A", description: "first" }
+  rows keyModules [
+    { module: "Business A", features: "first" }
   ]
 }
 
 section overview {
-  table features {
-    name: "Feature Name" w1
-    description: "Description" w2
+  table keyModules {
+    module: "Module" w1
+    features: "Core Features" w2
   }
-  rows features [
-    { name: "Overview A", description: "second" }
+  rows keyModules [
+    { module: "Overview A", features: "second" }
   ]
 }

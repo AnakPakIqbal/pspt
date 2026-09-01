@@ -1,0 +1,1739 @@
+// Product Documentation Master for the Project Tracker platform.
+//
+// Content is drawn from the actual repositories in this workspace:
+//   ../../project-tracker      React + TypeScript dashboard (Vite)
+//   ../../project-tracker-api  Node + Express + Prisma REST API (MySQL)
+//
+// Parts left unfilled below still render as their own blank template, so the
+// generated document is complete and shows exactly what is still to be written.
+//
+//   node packages/pspt-cli/bin/pspt.js build examples/project-tracker.pspt \
+//     --out examples/output/project-tracker-documentation.docx
+
+doc "Project Tracker — Product Documentation" type=master
+
+// =============================================================================
+// Front matter
+// =============================================================================
+part picMatrix {
+  object coverInfo {
+    productName: "Project Tracker",
+    productType: "Internal web application",
+    status: "In Development",
+    lastUpdated: "Sept 1, 2026",
+    latestHistory: "Initial documentation generated from the project-tracker and project-tracker-api repositories."
+  }
+  object headerFooterLabels {
+    productNameLabel: "Project Tracker",
+    companyLabel: "PointStar",
+    teamLabel: "Product Team"
+  }
+}
+
+// =============================================================================
+// Part 2 — Project Brief
+// =============================================================================
+part projectBrief {
+  object headerFooterLabels { productNameLabel: "Project Tracker" }
+  object metadata { status: "Draft", version: "V1", lastUpdate: "Sept 1, 2026" }
+
+  overview: "Project Tracker is an internal web application for planning and tracking departmental project work. It gives each department a single place to define projects, break them into tasks and subtasks, assign people across divisions, route work through an approval flow, and report on progress — replacing ad-hoc spreadsheets and chat threads."
+
+  list backgroundPains {
+    item "Project status lives in spreadsheets and chat threads, so nobody has one current view"
+    item "Task approvals happen informally, leaving no record of who approved what, or when"
+    item "Assembling a status or weekly report is manual work repeated by every lead"
+    item "Access is all-or-nothing, so department and division boundaries are not enforced by the tool"
+  }
+
+  list objectives {
+    item "Give every department one authoritative view of project and task state"
+    item "Make approvals explicit and auditable, with a revision trail per task"
+    item "Generate per-user and weekly reports from live data instead of by hand"
+    item "Enforce organisation, department and division scope through the permission model"
+  }
+
+  table keyModules {
+    module:   "Module"        w1
+    features: "Core Features" w2.5
+  }
+  rows keyModules [
+    { module: "Auth",          features: "Email/password and Google sign-in, JWT access + refresh tokens, password change" },
+    { module: "Projects",      features: "CRUD, members, divisions, state (active/archived/deleted), progress, summary, deadlines" },
+    { module: "Tasks",         features: "Nested subtasks, assignees, tags, dependencies, approval and revision flow" },
+    { module: "Permissions",   features: "Numeric permission codes scoped to organisation, department or division" },
+    { module: "Departments",   features: "Departments, divisions, division members, department metrics" },
+    { module: "Invitations",   features: "Token invitations that carry the permissions to grant on acceptance" },
+    { module: "Attachments",   features: "File uploads and Google Drive links against projects and tasks" },
+    { module: "Activity Logs", features: "Per-feature/action audit trail with stats, performance and summary views" },
+    { module: "AI",            features: "Gemini-backed chat, blueprint generation and weekly report drafting" },
+    { module: "Reporting",     features: "User, project-summary and weekly report views, exportable to .docx" },
+    { module: "MCP",           features: "Model Context Protocol server exposing the tracker to AI agents" }
+  ]
+
+  table timeline {
+    phase:    "Phase"    w2
+    duration: "Duration" w1
+  }
+  rows timeline [
+    { phase: "Phase 1 — Discovery & Design",    duration: "[duration]" },
+    { phase: "Phase 2 — MVP",                    duration: "[duration]" },
+    { phase: "Phase 3 — Remaining scope",        duration: "[duration]" },
+    { phase: "Phase 4 — Testing & UAT",          duration: "[duration]" },
+    { phase: "Phase 5 — Deployment & Training",  duration: "[duration]" }
+  ]
+
+  list deliverables {
+    item "React dashboard application (project-tracker)"
+    item "REST API and MCP server (project-tracker-api)"
+    item "MySQL schema with Prisma migrations and seed data"
+    item "Technical documentation (this document)"
+  }
+
+  table preliminaryRisks {
+    risk:       "Risk"       w1.2
+    mitigation: "Mitigation" w1.5
+  }
+  rows preliminaryRisks [
+    { risk: "Scope rules span organisation, department and division, so authorisation bugs are easy to introduce", mitigation: "Centralise scope checks in middleware and constants; cover each scope level with integration tests" },
+    { risk: "Google Drive and Gemini are third-party dependencies on the critical path for attachments and AI features", mitigation: "Degrade gracefully when unavailable; keep them out of the core project/task flows" },
+    { risk: "Soft deletes (deletedAt) across users, projects and tasks can leak archived data into queries", mitigation: "Filter on deletedAt in the repository layer, never in controllers" }
+  ]
+}
+
+// =============================================================================
+// Part 3 — Business Requirements Document
+// =============================================================================
+part brd {
+  object headerFooterLabels { productNameLabel: "Project Tracker" }
+  object metadata { status: "Draft", version: "V1", lastUpdate: "Sept 1, 2026" }
+
+  purpose: "Defines what the business needs Project Tracker to do, in business terms, before any implementation decision is made. It is the source the SRS traces its functional requirements back to."
+
+  list businessObjectives {
+    item "Remove manual status reporting from every project lead's week"
+    item "Make every task approval and revision attributable to a named person and time"
+    item "Keep project data visible only within the department or division that owns it"
+  }
+
+  object scope {
+    inScope: "Project and task planning, assignment and tracking; the approval and revision flow; departments, divisions and their membership; permissions and invitations; attachments; activity logging; and reporting drawn from that data.",
+    outOfScope: "Payroll, invoicing and billing; time-sheet capture; customer-facing portals; and any project data outside the departments configured in the platform."
+  }
+
+  table projectRoles {
+    name:           "Role"           w1
+    role:           "Scope"          w1
+    responsibility: "Responsibility" w2.4
+  }
+  rows projectRoles [
+    { name: "SuperAdmin",       role: "Organisation", responsibility: "Unrestricted access across the platform; bypasses permission checks" },
+    { name: "Department Admin", role: "Department",   responsibility: "Full operational and structural control of their own department" },
+    { name: "Division Manager", role: "Division",     responsibility: "Operational management scoped to their specific division" },
+    { name: "Member",           role: "Dept/Division", responsibility: "Executes assigned tasks and collaborates on projects" },
+    { name: "Viewer",           role: "Organisation", responsibility: "Read-only auditor across all departments" }
+  ]
+
+  table businessRequirements {
+    id:          "ID"          w0.6
+    requirement: "Requirement" w2.6
+    objective:   "Objective"   w1.2
+    priority:    "Priority"    w0.7
+  }
+  rows businessRequirements [
+    { id: "BR-001", requirement: "The system shall let an authorised user create a project with an owning department, schedule and budget", objective: "Single view of work", priority: "Must" },
+    { id: "BR-002", requirement: "The system shall let a project be broken into tasks and nested subtasks", objective: "Single view of work", priority: "Must" },
+    { id: "BR-003", requirement: "The system shall let multiple people be assigned to a single task", objective: "Single view of work", priority: "Must" },
+    { id: "BR-004", requirement: "The system shall route a completed task to named approvers who may approve, reject or request revision", objective: "Auditable approvals", priority: "Must" },
+    { id: "BR-005", requirement: "The system shall keep a numbered revision history for every task, with comments", objective: "Auditable approvals", priority: "Must" },
+    { id: "BR-006", requirement: "The system shall record an activity log entry for every significant action, attributed to a user", objective: "Auditable approvals", priority: "Must" },
+    { id: "BR-007", requirement: "The system shall restrict every read and write to the caller's organisation, department or division scope", objective: "Enforced boundaries", priority: "Must" },
+    { id: "BR-008", requirement: "The system shall let an authorised user invite a new user and pre-assign the permissions they will receive", objective: "Enforced boundaries", priority: "Must" },
+    { id: "BR-009", requirement: "The system shall produce a per-user report and a weekly report as a downloadable document", objective: "Remove manual reporting", priority: "Should" },
+    { id: "BR-010", requirement: "The system shall let files and Google Drive links be attached to projects and tasks", objective: "Single view of work", priority: "Should" },
+    { id: "BR-011", requirement: "The system shall archive rather than destroy completed projects, keeping them retrievable", objective: "Single view of work", priority: "Should" }
+  ]
+
+  processOverview: "The core business process is the task lifecycle. It is triggered when a project member creates a task against a project, and completes when a designated approver records a decision on the finished work. Its goal is that no task is considered done without an attributable approval."
+
+  processScope: "Starts when a task is created against an existing project. Ends when an approver records approved, rejected, or revise on that task. Project creation upstream and reporting downstream are outside this process."
+
+  list exceptions {
+    item "A task is rejected — it returns to the assignee and a new revision is opened rather than the original being edited in place"
+    item "An approver requests revision — the task moves to the revise state and accumulates a numbered revision with comments"
+    item "A task has unresolved dependencies — dependent tasks are blocked until the dependency completes"
+    item "The assignee leaves the division — the task keeps its assignment record and must be reassigned explicitly"
+  }
+
+  table actors {
+    actor:       "Actor"       w1
+    description: "Description" w2.6
+  }
+  rows actors [
+    { actor: "Project member",  description: "Creates and updates tasks on projects they belong to" },
+    { actor: "Task assignee",   description: "Executes an assigned task and marks it complete" },
+    { actor: "Task approver",   description: "Reviews a completed task and records approve, reject or revise" },
+    { actor: "Division manager", description: "Manages projects, tasks and members within their division" },
+    { actor: "Department admin", description: "Administers departments, divisions, users and permissions" },
+    { actor: "Google OAuth",    description: "External identity provider used for sign-in" },
+    { actor: "Google Drive",    description: "External store backing linked attachments" },
+    { actor: "Gemini",          description: "External model backing chat, blueprint and weekly-report generation" }
+  ]
+
+  table useCaseList {
+    id:          "ID"          w0.6
+    name:        "Use Case"    w1.4
+    actor:       "Actor"       w1.1
+    description: "Description" w2.4
+  }
+  rows useCaseList [
+    { id: "UC-01", name: "Sign in",              actor: "Any user",        description: "Authenticates by password or Google and receives access and refresh tokens" },
+    { id: "UC-02", name: "Create a project",     actor: "Department admin", description: "Creates a project with department, schedule, budget and priority" },
+    { id: "UC-03", name: "Create a task",        actor: "Project member",  description: "Adds a task, optionally as a subtask of an existing task" },
+    { id: "UC-04", name: "Assign a task",        actor: "Project member",  description: "Adds or removes assignees on a task" },
+    { id: "UC-05", name: "Complete a task",      actor: "Task assignee",   description: "Marks a task complete and notifies its approvers" },
+    { id: "UC-06", name: "Approve or reject",    actor: "Task approver",   description: "Records approved, rejected or revise against the task" },
+    { id: "UC-07", name: "Raise a revision",     actor: "Task assignee",   description: "Opens a numbered revision on a task and responds to comments" },
+    { id: "UC-08", name: "Invite a user",        actor: "Department admin", description: "Issues a token invitation carrying the permissions to grant" },
+    { id: "UC-09", name: "Attach a file",        actor: "Project member",  description: "Uploads a file or links a Google Drive document to a project or task" },
+    { id: "UC-10", name: "Archive a project",    actor: "Department admin", description: "Moves a completed project to the archived state" },
+    { id: "UC-11", name: "Download a report",    actor: "Any user",        description: "Generates a personal or weekly report as a .docx download" }
+  ]
+
+  table traceabilityMatrix {
+    useCase:      "Use Case"     w1
+    requirements: "Requirements" w2.5
+  }
+  rows traceabilityMatrix [
+    { useCase: "UC-01", requirements: "BR-007" },
+    { useCase: "UC-02", requirements: "BR-001, BR-007" },
+    { useCase: "UC-03", requirements: "BR-002" },
+    { useCase: "UC-04", requirements: "BR-003" },
+    { useCase: "UC-05", requirements: "BR-004, BR-006" },
+    { useCase: "UC-06", requirements: "BR-004, BR-006" },
+    { useCase: "UC-07", requirements: "BR-005" },
+    { useCase: "UC-08", requirements: "BR-008" },
+    { useCase: "UC-09", requirements: "BR-010" },
+    { useCase: "UC-10", requirements: "BR-011" },
+    { useCase: "UC-11", requirements: "BR-009" }
+  ]
+
+  list assumptionsDependencies {
+    item "Every user belongs to exactly one department; division membership is optional and may be multiple"
+    item "Google Workspace is available for OAuth sign-in and for Drive-backed attachments"
+    item "A Gemini API key is provisioned for the AI features; the core tracker works without it"
+    item "MySQL 8.4 is the system of record, accessed only through Prisma"
+  }
+
+  list risks {
+    item "Permission scope is expressed as numeric codes with _1/_2/_3 suffixes — a mis-scoped grant silently widens access"
+    item "Task approval and revision state is a state machine; an incomplete transition leaves a task unactionable"
+    item "AI-generated content is drafting assistance and must not be treated as an approval or a source of record"
+  }
+}
+
+// =============================================================================
+// Part 5 — Software Requirements Specification
+// =============================================================================
+part srs {
+  object headerFooterLabels { productNameLabel: "Project Tracker" }
+  object metadata { status: "Draft", version: "V1", lastUpdate: "Sept 1, 2026" }
+
+  purposeAudience: "Specifies the testable behaviour of Project Tracker for the engineering and QA teams. Every functional requirement here traces back to a business requirement in the BRD (Part 3)."
+
+  scope: "Covers the REST API and the React dashboard. Scope of the business processes themselves is defined once in the BRD, section 3, and is not repeated here."
+
+  list references {
+    item "Part 3 — Business Requirements Document (BR-001 … BR-011)"
+    item "project-tracker-api/docs/openapi.yaml — the API's own OpenAPI description"
+    item "project-tracker-api/docs/roles.md — permission codes and the five system roles"
+    item "project-tracker-api/prisma/schema.prisma — the authoritative data model"
+  }
+
+  productPerspective: "An integrated web system: a single-page React client talking to an Express REST API over HTTPS, backed by MySQL. It additionally exposes a Model Context Protocol server so AI agents can query the same domain through a separate transport."
+
+  list productFunctions {
+    item "Authenticate users by password or Google, and issue rotating JWT access and refresh tokens"
+    item "Manage projects, their members and their division assignments"
+    item "Manage tasks, subtasks, assignees, tags and dependencies"
+    item "Route task completion through named approvers and record revisions"
+    item "Administer departments, divisions, users, permissions and invitations"
+    item "Store attachments as uploads or Google Drive links"
+    item "Record and query an activity log across every feature"
+    item "Generate reports, including .docx exports"
+  }
+
+  table userClasses {
+    userClass:      "User Class"      w1.1
+    description:    "Description"     w2.2
+    technicalLevel: "Technical Level" w1
+  }
+  rows userClasses [
+    { userClass: "SuperAdmin",       description: "Platform-wide administrator; bypasses permission checks", technicalLevel: "High" },
+    { userClass: "Department Admin", description: "Administers one department and its divisions",           technicalLevel: "Medium" },
+    { userClass: "Division Manager", description: "Leads one division's projects and tasks",                technicalLevel: "Medium" },
+    { userClass: "Member",           description: "Works assigned tasks; no administrative access",         technicalLevel: "Basic" },
+    { userClass: "Viewer",           description: "Read-only auditor across all departments",               technicalLevel: "Basic" },
+    { userClass: "MCP agent",        description: "AI agent authenticating as a dedicated seeded account",  technicalLevel: "N/A — programmatic" }
+  ]
+
+  list operatingEnvironment {
+    item "Client: current versions of Chrome, Edge, Firefox and Safari"
+    item "Server: Node.js with TypeScript, built and run under Bun in the container image"
+    item "Database: MySQL 8.4"
+    item "Containers: multi-stage Docker images; the client is served by nginx"
+  }
+
+  list constraints {
+    item "All database access goes through Prisma; no raw SQL in feature code"
+    item "Repositories contain queries only; business rules live in services"
+    item "Features may not import each other's internals — only through src/shared"
+    item "Environment configuration is validated by a Zod schema at boot and the process exits if invalid"
+    item "JWT_SECRET and JWT_REFRESH_SECRET must each be at least 32 characters"
+  }
+
+  list assumptionsDependencies {
+    item "A reachable MySQL instance and a valid DATABASE_URL are available at start-up"
+    item "SMTP credentials are configured for invitation and notification mail"
+    item "Google OAuth client credentials and a Drive refresh token are provisioned"
+  }
+
+  table functionalRequirements {
+    id:          "ID"          w1
+    requirement: "Requirement" w3
+    tracesTo:    "Traces To"   w0.8
+  }
+  rows functionalRequirements [
+    { id: "FR-AUTH-001", requirement: "The system shall authenticate a user by email and password and return an access token and a refresh token", tracesTo: "BR-007" },
+    { id: "FR-AUTH-002", requirement: "The system shall authenticate a user through Google OAuth and provision the account on first sign-in",       tracesTo: "BR-007" },
+    { id: "FR-AUTH-003", requirement: "The system shall exchange a valid refresh token for a new access token and invalidate the used token",       tracesTo: "BR-007" },
+    { id: "FR-AUTH-004", requirement: "The system shall reject any request whose permission code is outside the caller's scope level",              tracesTo: "BR-007" },
+    { id: "FR-PROJ-001", requirement: "The system shall create a project with name, department, start date, due date, priority and budget",         tracesTo: "BR-001" },
+    { id: "FR-PROJ-002", requirement: "The system shall add and remove project members",                                                            tracesTo: "BR-001" },
+    { id: "FR-PROJ-003", requirement: "The system shall transition a project between the active, archived and deleted states",                      tracesTo: "BR-011" },
+    { id: "FR-PROJ-004", requirement: "The system shall return a summary of a project's task counts and progress",                                  tracesTo: "BR-009" },
+    { id: "FR-TASK-001", requirement: "The system shall create a task against a project, optionally as a subtask of an existing task",              tracesTo: "BR-002" },
+    { id: "FR-TASK-002", requirement: "The system shall add and remove multiple assignees on a task",                                               tracesTo: "BR-003" },
+    { id: "FR-TASK-003", requirement: "The system shall mark a task complete and notify its approvers",                                             tracesTo: "BR-004" },
+    { id: "FR-TASK-004", requirement: "The system shall record an approval decision of approved, rejected or revise against a task",                tracesTo: "BR-004" },
+    { id: "FR-TASK-005", requirement: "The system shall open a numbered revision on a task and store comments against it",                          tracesTo: "BR-005" },
+    { id: "FR-TASK-006", requirement: "The system shall record a dependency between two tasks",                                                     tracesTo: "BR-002" },
+    { id: "FR-PERM-001", requirement: "The system shall assign and revoke numeric permission codes on a user",                                      tracesTo: "BR-007" },
+    { id: "FR-PERM-002", requirement: "The system shall permit granting a permission only at the caller's scope level or narrower",                 tracesTo: "BR-007" },
+    { id: "FR-INV-001",  requirement: "The system shall issue a token invitation carrying the permissions to grant on acceptance",                  tracesTo: "BR-008" },
+    { id: "FR-ATT-001",  requirement: "The system shall accept a file upload or a Google Drive link against a project or a task",                   tracesTo: "BR-010" },
+    { id: "FR-LOG-001",  requirement: "The system shall write an activity log entry recording feature, action, user and timestamp",                 tracesTo: "BR-006" },
+    { id: "FR-RPT-001",  requirement: "The system shall generate a personal and a weekly report as a .docx download",                               tracesTo: "BR-009" }
+  ]
+
+  table nonFunctionalRequirements {
+    category:    "Category"    w1
+    requirement: "Requirement" w3
+  }
+  rows nonFunctionalRequirements [
+    { category: "Security",    requirement: "All traffic is served over HTTPS; Helmet sets security headers and CORS is restricted to the configured origin" },
+    { category: "Security",    requirement: "Passwords are stored only as bcrypt hashes; access tokens expire in 15 minutes and refresh tokens in 7 days by default" },
+    { category: "Security",    requirement: "Every request body is validated against a Zod schema before reaching a controller" },
+    { category: "Reliability", requirement: "A GET /health endpoint returns status and timestamp for liveness checking" },
+    { category: "Usability",   requirement: "[Define the target — e.g. a new member can create and assign a task without training]" },
+    { category: "Performance", requirement: "[Define the target — e.g. project list responds within 500 ms at the 95th percentile]" },
+    { category: "Scalability", requirement: "[Define the expected concurrent-user and project-volume ceiling]" }
+  ]
+
+  table userInterfaces {
+    screenId:            "Screen ID"            w0.8
+    screenName:          "Screen"               w1.6
+    relatedRequirements: "Related Requirements" w1.6
+  }
+  rows userInterfaces [
+    { screenId: "SCR-01", screenName: "Login",           relatedRequirements: "FR-AUTH-001, FR-AUTH-002" },
+    { screenId: "SCR-02", screenName: "Create password", relatedRequirements: "FR-INV-001" },
+    { screenId: "SCR-03", screenName: "Dashboard",       relatedRequirements: "FR-PROJ-004" },
+    { screenId: "SCR-04", screenName: "Projects",        relatedRequirements: "FR-PROJ-001, FR-PROJ-002, FR-PROJ-003" },
+    { screenId: "SCR-05", screenName: "Project summary", relatedRequirements: "FR-PROJ-004" },
+    { screenId: "SCR-06", screenName: "People",          relatedRequirements: "FR-PERM-001, FR-INV-001" },
+    { screenId: "SCR-07", screenName: "Departments",     relatedRequirements: "FR-PERM-002" },
+    { screenId: "SCR-08", screenName: "Activity",        relatedRequirements: "FR-LOG-001" },
+    { screenId: "SCR-09", screenName: "Archive",         relatedRequirements: "FR-PROJ-003" },
+    { screenId: "SCR-10", screenName: "AI Brainstorm",   relatedRequirements: "[not yet specified]" },
+    { screenId: "SCR-11", screenName: "My Report",       relatedRequirements: "FR-RPT-001" },
+    { screenId: "SCR-12", screenName: "User Report",     relatedRequirements: "FR-RPT-001" },
+    { screenId: "SCR-13", screenName: "Profile",         relatedRequirements: "[not yet specified]" },
+    { screenId: "SCR-14", screenName: "Help & Support",  relatedRequirements: "[not yet specified]" }
+  ]
+
+  hardwareInterfaces: "None. Project Tracker is a pure-software system with no dedicated hardware interface."
+
+  softwareInterfaces: "Google OAuth for sign-in, Google Drive for linked attachments, Gemini for AI features, and SMTP for outbound mail. The full wire contract for the platform's own API is in Part 6's API Specification."
+
+  communicationInterfaces: "HTTPS/JSON for the REST API under the configured API prefix (/api/v1 by default). Bearer JWT in the Authorization header. The MCP server is mounted on the same Express application over its own transport, with a stdio transport available for local agents."
+
+  list otherRequirements {
+    item "Activity logging must be sufficient to reconstruct who changed a project or task and when"
+    item "Soft-deleted records must remain retrievable for audit but must never appear in normal queries"
+  }
+}
+
+// =============================================================================
+// Part 6 — Technical Documentation, Data Model and API Specification
+// =============================================================================
+part techDoc {
+  object headerFooterLabels { productNameLabel: "Project Tracker" }
+  object metadata { status: "Draft", version: "V1", lastUpdate: "Sept 1, 2026" }
+
+  architectureOverview: "A client-server system split into two deployable applications. The frontend is a React single-page application built by Vite and served as static assets by nginx. The backend is an Express REST API in TypeScript, organised by feature rather than by technical layer, with Awilix providing per-request dependency injection. Each feature owns its routes, controller, service, repository, schema and types, and features share code only through src/shared — the boundary is enforced by the folder structure. Repositories hold Prisma queries with no business logic; services hold the business rules and never touch Prisma directly, so a schema migration and a rule change cannot break each other."
+
+  table components {
+    component:      "Component"      w1.2
+    responsibility: "Responsibility" w2.8
+  }
+  rows components [
+    { component: "React SPA",          responsibility: "Renders the dashboard; feature-colocated code with an atomic-design shared component layer" },
+    { component: "Express API",        responsibility: "Serves the REST API under /api/v1; applies Helmet, CORS, JSON parsing and per-request DI scope" },
+    { component: "Feature services",   responsibility: "Business rules, authorisation checks and side-effect orchestration such as activity logging" },
+    { component: "Feature repositories", responsibility: "Prisma queries only — reads and writes, no domain logic" },
+    { component: "Awilix container",   responsibility: "Resolves services and repositories per request via a scoped container" },
+    { component: "Zod schemas",        responsibility: "Validate request bodies and environment configuration; invalid env exits the process at boot" },
+    { component: "State machine",      responsibility: "Governs the legal task approval and project state transitions" },
+    { component: "Mailer",             responsibility: "Sends invitation and notification mail over SMTP via nodemailer" },
+    { component: "Docx module",        responsibility: "Renders user and weekly reports as downloadable .docx files" },
+    { component: "MCP server",         responsibility: "Exposes the domain to AI agents; mounted on the app and available over stdio" },
+    { component: "MySQL",              responsibility: "System of record, reached exclusively through Prisma" }
+  ]
+
+  table techStack {
+    layer:      "Layer"      w1
+    technology: "Technology" w1.6
+    version:    "Version"    w0.8
+    notes:      "Notes"      w2
+  }
+  rows techStack [
+    { layer: "Frontend",       technology: "React + TypeScript",       version: "18.3",  notes: "Feature-colocated architecture" },
+    { layer: "Frontend build", technology: "Vite",                     version: "5.x",   notes: "tsc then vite build" },
+    { layer: "Styling",        technology: "Tailwind CSS",             version: "4.3",   notes: "Via @tailwindcss/vite" },
+    { layer: "Server state",   technology: "TanStack Query",           version: "5.x",   notes: "Caching and request state" },
+    { layer: "Client state",   technology: "Zustand",                  version: "4.5",   notes: "Local UI state" },
+    { layer: "Tables & lists", technology: "TanStack Table / Virtual", version: "8.x/3.x", notes: "Virtualised data grids" },
+    { layer: "Scheduling UI",  technology: "FullCalendar",             version: "6.1",   notes: "Day, week and interaction plugins" },
+    { layer: "Drag & drop",    technology: "dnd-kit",                  version: "6.x",   notes: "Board and ordering interactions" },
+    { layer: "Charts",         technology: "Recharts",                 version: "3.x",   notes: "Dashboard and report charts" },
+    { layer: "Backend",        technology: "Node.js + Express",        version: "5.x",   notes: "TypeScript throughout" },
+    { layer: "DI",             technology: "Awilix",                   version: "13.x",  notes: "Per-request scoped container" },
+    { layer: "ORM",            technology: "Prisma",                   version: "6.4",   notes: "Sole database access path" },
+    { layer: "Database",       technology: "MySQL",                    version: "8.4",   notes: "Run via Docker Compose locally" },
+    { layer: "Validation",     technology: "Zod",                      version: "3.x",   notes: "Request bodies and environment" },
+    { layer: "Auth",           technology: "jsonwebtoken + bcryptjs",  version: "9.x/2.x", notes: "JWT access and refresh tokens" },
+    { layer: "AI",            technology: "LangChain / LangGraph + Gemini", version: "1.x", notes: "Chat, blueprint and weekly report" },
+    { layer: "Agent protocol", technology: "MCP SDK",                  version: "1.30",  notes: "Model Context Protocol server" },
+    { layer: "Infrastructure", technology: "Docker (Bun + nginx)",     version: "—",     notes: "Multi-stage builds for both apps" },
+    { layer: "Testing",        technology: "Vitest + Playwright",      version: "—",     notes: "Unit, integration and E2E" }
+  ]
+
+  list codebaseTree {
+    item "project-tracker/                     React dashboard"
+    item "├── src/app/                         App shell, global styles"
+    item "├── src/pages/                       Route-level pages"
+    item "├── src/features/                    activity, ai-brainstorm, archive, auth, dashboard,"
+    item "│                                    departments, help-support, people, profile,"
+    item "│                                    project-summary, projects, user-report"
+    item "├── src/shared/                      api.ts, components (atoms/molecules/organisms/templates),"
+    item "│                                    constants, hooks, services, types, utils"
+    item "└── e2e/                             Playwright specs"
+    item ""
+    item "project-tracker-api/                 REST API + MCP server"
+    item "├── src/app.ts                       Express app, middleware, route mounting"
+    item "├── src/server.ts                    HTTP entry point"
+    item "├── src/container/                   Awilix container and cradle types"
+    item "├── src/features/<feature>/          routes, controller, service(s), repository,"
+    item "│                                    schema, types, index — one folder per feature"
+    item "├── src/shared/                      ai, config, db, docx, drive, errors, mailer,"
+    item "│                                    middleware, state-machine, types, utils"
+    item "├── prisma/schema.prisma             Data model and migrations"
+    item "└── tests/                           unit, integration, regressions"
+  }
+
+  table namingConventions {
+    item:       "Item"       w1.2
+    convention: "Convention" w1.4
+    example:    "Example"    w1.8
+  }
+  rows namingConventions [
+    { item: "Feature folder",     convention: "kebab-case, plural noun", example: "features/activity-logs/" },
+    { item: "API file role",      convention: "<feature>.<role>.ts",     example: "tasks.repository.ts" },
+    { item: "React component",    convention: "PascalCase .tsx",         example: "DashboardPage.tsx" },
+    { item: "Route path",         convention: "kebab-case plural",       example: "/api/v1/activity-logs" },
+    { item: "Prisma model",       convention: "PascalCase singular",     example: "model TaskRevision" },
+    { item: "Database table",     convention: "snake_case plural via @@map", example: "@@map(\"task_revisions\")" },
+    { item: "Database column",    convention: "snake_case via @map",     example: "@map(\"parent_task_id\")" },
+    { item: "Enum value",         convention: "snake_case",              example: "in_progress" },
+    { item: "Requirement ID",     convention: "FR-<MODULE>-<nnn>",       example: "FR-TASK-004" }
+  ]
+
+  dataFlow: "A typical write follows one path. The browser issues a request with a bearer JWT; Helmet and CORS run first, then JSON parsing, then a middleware that creates a per-request Awilix scope. The feature router matches the path, an authenticate middleware verifies the token, a permission middleware checks the caller's numeric permission code against the required scope level, and a validateBody middleware parses the payload with its Zod schema. The controller resolves its service from the request scope and delegates. The service applies business rules, calls its repository for the Prisma reads and writes, and writes an activity-log entry for the action. Errors thrown as AppError subclasses are caught by the terminal error handler and rendered as a JSON envelope; a ZodError becomes a 422 with per-field messages."
+
+  table integrationPoints {
+    system:      "System"      w1.2
+    purpose:     "Purpose"     w2
+    protocol:    "Protocol"    w1
+    criticality: "Criticality" w0.9
+  }
+  rows integrationPoints [
+    { system: "Google OAuth",  purpose: "Sign-in and account provisioning",        protocol: "OAuth 2.0 / HTTPS", criticality: "High" },
+    { system: "Google Drive",  purpose: "Storage behind linked attachments",       protocol: "REST / HTTPS",      criticality: "Medium" },
+    { system: "Gemini",        purpose: "Chat, blueprint and weekly-report drafting", protocol: "REST / HTTPS",   criticality: "Low" },
+    { system: "SMTP",          purpose: "Invitation and notification mail",        protocol: "SMTP over TLS",     criticality: "Medium" },
+    { system: "MySQL",         purpose: "System of record",                        protocol: "MySQL wire / Prisma", criticality: "Critical" },
+    { system: "MCP clients",   purpose: "AI agent access to the domain",           protocol: "MCP over HTTP/stdio", criticality: "Low" }
+  ]
+
+  list scalabilityNotes {
+    item "Expected load: [define the concurrent-user and project-volume ceiling]"
+    item "Indexed access paths already exist on the hot columns — projects by department/status/state, tasks by project/status/parent, users by department/status"
+    item "Request bodies are capped at 10 MB for both JSON and urlencoded payloads"
+    item "The API is stateless apart from refresh tokens in the database, so it scales horizontally behind a load balancer"
+    item "Known bottleneck: deeply nested subtask trees and task-dependency graphs are read recursively — measure before allowing unbounded depth"
+  }
+
+  deploymentTopologyNote: "Two containers. The client image builds with Bun and ships the static bundle inside nginx (~25 MB). The API image builds with Bun, runs prisma generate and tsc, then runs the compiled server on Bun, exposing port 3000. MySQL 8.4 runs as its own service — via Docker Compose locally, alongside Adminer on port 8080."
+
+  securityOverview: "Covers authentication, authorisation, data protection and input validation for both applications. No formal compliance certification is targeted in this phase; the controls below are the platform's own baseline."
+
+  table authRequirements {
+    id:          "ID"          w1
+    requirement: "Requirement" w3.4
+  }
+  rows authRequirements [
+    { id: "SEC-AUTH-01", requirement: "Passwords are stored only as bcrypt hashes; the plaintext is never persisted or logged" },
+    { id: "SEC-AUTH-02", requirement: "Access tokens expire after 15 minutes and refresh tokens after 7 days by default" },
+    { id: "SEC-AUTH-03", requirement: "JWT_SECRET and JWT_REFRESH_SECRET are each at least 32 characters, enforced at boot" },
+    { id: "SEC-AUTH-04", requirement: "Refresh tokens are persisted so they can be invalidated on logout" },
+    { id: "SEC-AUTH-05", requirement: "Every permission check resolves the caller's scope level and rejects grants wider than their own" },
+    { id: "SEC-AUTH-06", requirement: "Google sign-in verifies the ID token against the configured Google client ID" }
+  ]
+
+  table dataProtection {
+    id:          "ID"          w1
+    requirement: "Requirement" w3.4
+  }
+  rows dataProtection [
+    { id: "SEC-DATA-01", requirement: "All traffic is served over HTTPS in staging and production" },
+    { id: "SEC-DATA-02", requirement: "Helmet sets the standard security headers on every response" },
+    { id: "SEC-DATA-03", requirement: "CORS is restricted to the configured origin with credentials enabled" },
+    { id: "SEC-DATA-04", requirement: "Secrets are supplied only as environment variables and never committed" },
+    { id: "SEC-DATA-05", requirement: "Deleted users, projects and tasks are soft-deleted and excluded from normal queries" },
+    { id: "SEC-DATA-06", requirement: "Error responses in production return a generic message; details are logged server-side only" }
+  ]
+
+  table inputValidation {
+    id:          "ID"          w1
+    requirement: "Requirement" w3.4
+  }
+  rows inputValidation [
+    { id: "SEC-INPUT-01", requirement: "Every request body is parsed by a Zod schema before the controller runs" },
+    { id: "SEC-INPUT-02", requirement: "A validation failure returns 422 with per-field messages and no partial write" },
+    { id: "SEC-INPUT-03", requirement: "All queries go through Prisma's parameterised client; feature code writes no raw SQL" },
+    { id: "SEC-INPUT-04", requirement: "JSON and urlencoded bodies are capped at 10 MB" },
+    { id: "SEC-INPUT-05", requirement: "Uploads are handled by multer with the accepted types and size limits enforced server-side" }
+  ]
+
+  list sessionManagement {
+    item "Short-lived access tokens are held by the client and sent as a bearer token"
+    item "Refresh tokens are stored server-side so a logout can revoke them"
+    item "passwordChangedAt is recorded on the user so sessions issued before a password change can be treated as stale"
+    item "lastLoginAt is recorded on every successful sign-in"
+  }
+
+  table auditLogging {
+    event:  "Event"           w1.4
+    fields: "Fields Captured" w2.6
+  }
+  rows auditLogging [
+    { event: "Authentication", fields: "login, logout, register, change_password — user, timestamp" },
+    { event: "Project",        fields: "create, update, delete, complete_project, add_member, remove_member" },
+    { event: "Task",           fields: "create, update, delete, assign, unassign, approve, reject, revise, notify_approvers" },
+    { event: "Invitation",     fields: "send, accept, revoke — issuing user, target address, permissions granted" },
+    { event: "Attachment",     fields: "upload, delete — user, target project or task" }
+  ]
+
+  list complianceRequirements {
+    item "Data retention policy: [define how long soft-deleted records and activity logs are kept]"
+    item "Regulatory scope: none targeted in this phase — the platform holds internal employee and project data only"
+  }
+
+  table vulnerabilityManagement {
+    activity:  "Activity"  w2
+    frequency: "Frequency" w1
+  }
+  rows vulnerabilityManagement [
+    { activity: "Dependency audit of both applications", frequency: "[define — e.g. monthly]" },
+    { activity: "Penetration test",                      frequency: "[define — e.g. annually]" },
+    { activity: "Permission-scope regression suite",     frequency: "Every pull request" }
+  ]
+
+  list securityChecklist {
+    item "All environment secrets set and validated at boot"
+    item "CORS origin points at the real client domain, not a wildcard"
+    item "JWT secrets rotated and at least 32 characters"
+    item "Rate limiting configured on the authentication endpoints"
+    item "No debug or verbose error output enabled in production"
+    item "Database credentials scoped to the application's own schema"
+    item "Permission scope regression tests passing for all five roles"
+  }
+
+  // --- 6b. Data model -------------------------------------------------------
+  erdOverview: "The data domain is the project-tracking model: organisational structure (departments, divisions), identity and access (users, permissions, invitations, refresh tokens), work (projects, tasks, revisions, tags, dependencies) and supporting records (attachments, activity logs). The target engine is MySQL 8.4, defined in Prisma and migrated through Prisma Migrate. Primary keys are UUID strings; timestamps are created_at/updated_at throughout, with deleted_at marking soft deletes."
+
+  erdDiagramNote: "[Insert the ERD diagram — generate from prisma/schema.prisma]"
+
+  table entityList {
+    entity:      "Entity"      w1.2
+    description: "Description" w2.8
+  }
+  rows entityList [
+    { entity: "users",                 description: "People with an account, each belonging to exactly one department" },
+    { entity: "departments",           description: "Top-level organisational unit, with one admin user" },
+    { entity: "divisions",             description: "Subdivision of a department, with one manager" },
+    { entity: "division_members",      description: "Membership of a user in a division" },
+    { entity: "permissions",           description: "Catalogue of resource/action pairs, each with a unique numeric code" },
+    { entity: "user_permissions",      description: "Permission codes granted to a user, and who granted them" },
+    { entity: "invitations",           description: "Pending invitations with a token and status" },
+    { entity: "invitation_permissions", description: "Permissions an invitation will grant on acceptance" },
+    { entity: "projects",              description: "A unit of work owned by a department, with schedule, budget and state" },
+    { entity: "project_members",       description: "Membership of a user in a project" },
+    { entity: "project_divisions",     description: "Divisions assigned to a project" },
+    { entity: "tasks",                 description: "Work item on a project; self-referencing for subtasks" },
+    { entity: "task_assignees",        description: "Users assigned to a task" },
+    { entity: "task_approvers",        description: "Users who may record an approval decision on a task" },
+    { entity: "task_revisions",        description: "Numbered revisions of a task" },
+    { entity: "revision_comments",     description: "Comments recorded against a revision" },
+    { entity: "task_dependencies",     description: "Dependency edges between tasks" },
+    { entity: "tags",                  description: "Labels available for tasks" },
+    { entity: "task_tags",             description: "Tags applied to a task" },
+    { entity: "attachments",           description: "Uploaded files and Drive links against a project or task" },
+    { entity: "activity_logs",         description: "Audit trail of feature/action events attributed to a user" },
+    { entity: "refresh_tokens",        description: "Issued refresh tokens, so they can be revoked" }
+  ]
+
+  table relationships {
+    from:        "From"        w1.1
+    to:          "To"          w1.1
+    cardinality: "Cardinality" w0.9
+    rule:        "Business Rule" w2.4
+  }
+  rows relationships [
+    { from: "departments", to: "users",              cardinality: "1:0..*", rule: "Every user belongs to exactly one department" },
+    { from: "departments", to: "divisions",          cardinality: "1:0..*", rule: "A department contains zero or more divisions" },
+    { from: "divisions",   to: "division_members",   cardinality: "1:0..*", rule: "A user may belong to several divisions" },
+    { from: "departments", to: "projects",           cardinality: "1:0..*", rule: "A project is owned by exactly one department" },
+    { from: "users",       to: "projects",           cardinality: "1:0..*", rule: "A project records the user who created it" },
+    { from: "projects",    to: "project_members",    cardinality: "1:0..*", rule: "Deleting a project cascades to its membership" },
+    { from: "projects",    to: "tasks",              cardinality: "1:0..*", rule: "Deleting a project cascades to its tasks" },
+    { from: "tasks",       to: "tasks",              cardinality: "1:0..*", rule: "A task may be a subtask of one parent task" },
+    { from: "tasks",       to: "task_assignees",     cardinality: "1:0..*", rule: "A task may have several assignees" },
+    { from: "tasks",       to: "task_approvers",     cardinality: "1:0..*", rule: "A task may have several approvers" },
+    { from: "tasks",       to: "task_revisions",     cardinality: "1:0..*", rule: "Revisions are numbered per task" },
+    { from: "task_revisions", to: "revision_comments", cardinality: "1:0..*", rule: "Comments belong to one revision" },
+    { from: "tasks",       to: "task_dependencies",  cardinality: "1:0..*", rule: "A task may depend on, and be depended on by, other tasks" },
+    { from: "tasks",       to: "task_tags",          cardinality: "1:0..*", rule: "Tags are many-to-many with tasks" },
+    { from: "users",       to: "user_permissions",   cardinality: "1:0..*", rule: "Permissions are granted per user, recording the granter" },
+    { from: "users",       to: "refresh_tokens",     cardinality: "1:0..*", rule: "Each issued refresh token is revocable" }
+  ]
+
+
+  table entityDetails {
+    tableName: "Table" w1
+  }
+  rows entityDetails [
+    {
+      tableName: "users",
+      columns: [
+        { column: "id",                 type: "CHAR(36)",     constraints: "PK, uuid",                description: "Account identifier" },
+        { column: "email",              type: "VARCHAR",      constraints: "Not null",                description: "Sign-in address" },
+        { column: "name",               type: "VARCHAR",      constraints: "Not null",                description: "Display name" },
+        { column: "job_role",           type: "VARCHAR",      constraints: "Nullable",                description: "Free-text job title" },
+        { column: "password_hash",      type: "VARCHAR",      constraints: "Nullable",                description: "bcrypt hash; null for Google-only accounts" },
+        { column: "google_id",          type: "VARCHAR",      constraints: "Nullable",                description: "Google subject id, set on first Google sign-in" },
+        { column: "department_id",      type: "CHAR(36)",     constraints: "FK -> departments, indexed", description: "The one department the user belongs to" },
+        { column: "status",             type: "ENUM",         constraints: "Default active, indexed", description: "active | inactive | suspended" },
+        { column: "digest_frequency",   type: "ENUM",         constraints: "Default weekly",          description: "daily | weekly | monthly | never" },
+        { column: "password_changed_at", type: "DATETIME",    constraints: "Nullable",                description: "Used to treat older sessions as stale" },
+        { column: "last_login_at",      type: "DATETIME",     constraints: "Nullable",                description: "Stamped on every successful sign-in" },
+        { column: "deleted_at",         type: "DATETIME",     constraints: "Nullable, indexed",       description: "Soft-delete marker" },
+        { column: "created_at",         type: "DATETIME",     constraints: "Default now()",           description: "Row creation time" },
+        { column: "updated_at",         type: "DATETIME",     constraints: "Auto-updated",            description: "Last modification time" }
+      ]
+    },
+    {
+      tableName: "projects",
+      columns: [
+        { column: "id",            type: "CHAR(36)",  constraints: "PK, uuid",                  description: "Project identifier" },
+        { column: "name",          type: "VARCHAR",   constraints: "Not null",                  description: "Project name" },
+        { column: "description",   type: "TEXT",      constraints: "Nullable",                  description: "Long-form description" },
+        { column: "status",        type: "ENUM",      constraints: "Default not_started, indexed", description: "not_started | in_progress | in_review | completed | cancelled" },
+        { column: "state",         type: "ENUM",      constraints: "Default active, indexed",   description: "active | archived | deleted" },
+        { column: "priority",      type: "ENUM",      constraints: "Default medium",            description: "low | medium | high | critical" },
+        { column: "category",      type: "VARCHAR",   constraints: "Nullable",                  description: "Free-text categorisation" },
+        { column: "client_name",   type: "VARCHAR",   constraints: "Nullable",                  description: "Client the work is for" },
+        { column: "sales_name",    type: "VARCHAR",   constraints: "Nullable",                  description: "Owning salesperson" },
+        { column: "budget",        type: "INT",       constraints: "Default 0",                 description: "Whole IDR, no minor units" },
+        { column: "start_date",    type: "DATETIME",  constraints: "Not null",                  description: "Planned start" },
+        { column: "due_date",      type: "DATETIME",  constraints: "Not null",                  description: "Planned finish" },
+        { column: "progress",      type: "INT",       constraints: "Default 0",                 description: "Cached completion percentage, derived from task state" },
+        { column: "department_id", type: "CHAR(36)",  constraints: "FK -> departments, indexed", description: "Owning department" },
+        { column: "created_by",    type: "CHAR(36)",  constraints: "FK -> users",               description: "Creator" },
+        { column: "completed_at",  type: "DATETIME",  constraints: "Nullable",                  description: "Stamped when the project is completed" },
+        { column: "deleted_at",    type: "DATETIME",  constraints: "Nullable",                  description: "Soft-delete marker" }
+      ]
+    },
+    {
+      tableName: "tasks",
+      columns: [
+        { column: "id",              type: "CHAR(36)", constraints: "PK, uuid",                       description: "Task identifier" },
+        { column: "project_id",      type: "CHAR(36)", constraints: "FK -> projects, cascade, indexed", description: "Owning project" },
+        { column: "parent_task_id",  type: "CHAR(36)", constraints: "FK -> tasks, nullable, indexed", description: "Set when this task is a subtask" },
+        { column: "name",            type: "VARCHAR",  constraints: "Not null",                       description: "Task name" },
+        { column: "description",     type: "TEXT",     constraints: "Nullable",                       description: "Long-form description" },
+        { column: "status",          type: "ENUM",     constraints: "Default not_started, indexed",   description: "not_started | in_progress | in_review | completed | cancelled" },
+        { column: "approval_status", type: "ENUM",     constraints: "Default pending",                description: "pending | approved | rejected | revise" },
+        { column: "priority",        type: "ENUM",     constraints: "Default medium",                 description: "low | medium | high | critical" },
+        { column: "start_date",      type: "DATETIME", constraints: "Not null",                       description: "Planned start" },
+        { column: "due_date",        type: "DATETIME", constraints: "Not null",                       description: "Planned finish" },
+        { column: "budget",          type: "INT",      constraints: "Default 0",                      description: "Whole IDR, no minor units" },
+        { column: "progress",        type: "INT",      constraints: "Default 0",                      description: "Cached completion percentage" },
+        { column: "completed_at",    type: "DATETIME", constraints: "Nullable",                       description: "Stamped when the task is completed" },
+        { column: "deleted_at",      type: "DATETIME", constraints: "Nullable",                       description: "Soft-delete marker" }
+      ]
+    }
+  ]
+
+  normalisationNotes: "The schema is in third normal form. Join tables (project_members, division_members, task_assignees, task_tags, task_dependencies, invitation_permissions) carry composite primary keys rather than surrogate ids. The only deliberate denormalisation is the progress integer cached on projects and tasks, which is derived from task state and recomputed on write to avoid an aggregate query on every list read."
+
+  table indexingStrategy {
+    table:  "Table"  w1
+    index:  "Index"  w1.4
+    reason: "Reason" w2.4
+  }
+  rows indexingStrategy [
+    { table: "users",          index: "(department_id)",   reason: "Department-scoped user listings" },
+    { table: "users",          index: "(status)",          reason: "Filtering active from inactive and suspended accounts" },
+    { table: "users",          index: "(deleted_at)",      reason: "Excluding soft-deleted users from every query" },
+    { table: "projects",       index: "(department_id)",   reason: "Department-scoped project listings" },
+    { table: "projects",       index: "(status)",          reason: "Dashboard grouping by project status" },
+    { table: "projects",       index: "(state)",           reason: "Separating active from archived and deleted projects" },
+    { table: "project_members", index: "(user_id)",        reason: "Resolving the projects a user belongs to" },
+    { table: "tasks",          index: "(project_id)",      reason: "Listing a project's tasks" },
+    { table: "tasks",          index: "(status)",          reason: "Board and progress grouping" },
+    { table: "tasks",          index: "(parent_task_id)",  reason: "Walking the subtask tree" }
+  ]
+
+  // --- 6c. API specification -----------------------------------------------
+  apiOverview: "A REST API over JSON, consumed by the React dashboard and by the platform's own MCP server. Every route lives under the configured API prefix, and every route except sign-in, registration and the health check requires a bearer token."
+
+  list apiBaseUrls {
+    item "Local:      http://localhost:3000/api/v1"
+    item "Staging:    [staging base URL]"
+    item "Production: [production base URL]"
+  }
+
+  apiVersioningNote: "The version is carried in the path prefix, configured by API_PREFIX and defaulting to /api/v1. Removing an endpoint, removing a response field, or tightening validation on an existing field is a breaking change and requires a new prefix; adding an endpoint or an optional field does not."
+
+  apiAuthNote: "Obtain a token pair from POST /auth/login or POST /auth/google. Send the access token as a bearer token on every subsequent request. When it expires, exchange the refresh token at POST /auth/refresh; POST /auth/logout revokes it."
+
+  list apiAuthHeader {
+    item "Authorization: Bearer <access token>"
+    item "Content-Type: application/json"
+  }
+
+  apiRolesNote: "Access is decided by numeric permission codes held against the user, not by a role name. Each code carries a scope suffix — _1 organisation, _2 department, _3 division — and route middleware checks both the code and the scope. SuperAdmin bypasses the checks entirely; Viewer holds read-only codes at organisation scope."
+
+  list apiResponseFormat {
+    item "// Error envelope, as produced by the terminal error handler"
+    item "{"
+    item "  \"status\": \"error\","
+    item "  \"message\": \"Task not found\","
+    item "  \"code\": \"NOT_FOUND\""
+    item "}"
+    item ""
+    item "// Validation failure additionally carries per-field messages"
+    item "{"
+    item "  \"status\": \"error\","
+    item "  \"message\": \"Validation failed\","
+    item "  \"code\": \"VALIDATION_ERROR\","
+    item "  \"errors\": { \"dueDate\": [\"Required\"] }"
+    item "}"
+  }
+
+  table apiErrorCodes {
+    status:  "Status" w0.7
+    meaning: "Meaning" w3
+  }
+  rows apiErrorCodes [
+    { status: "200", meaning: "Success" },
+    { status: "201", meaning: "Resource created" },
+    { status: "401", meaning: "UNAUTHORIZED — missing, expired or invalid token" },
+    { status: "403", meaning: "FORBIDDEN — authenticated, but outside the caller's permission scope" },
+    { status: "404", meaning: "NOT_FOUND — the resource does not exist or is soft-deleted" },
+    { status: "409", meaning: "CONFLICT — the request contradicts current state, e.g. a duplicate member" },
+    { status: "422", meaning: "VALIDATION_ERROR — the body failed its Zod schema; errors lists the fields" },
+    { status: "500", meaning: "INTERNAL_ERROR — unexpected failure; the message is generic in production" }
+  ]
+
+  table rateLimiting {
+    limit:  "Limit"  w1
+    window: "Window" w1
+    header: "Header" w1.4
+  }
+  rows rateLimiting [
+    { limit: "[define the request ceiling]", window: "[define the window]", header: "[define — express-rate-limit is a dependency but no limiter is applied yet]" }
+  ]
+
+
+  table endpoints {
+    method: "Method" w0.6
+    path:   "Path"   w1.6
+  }
+  rows endpoints [
+    {
+      method: "GET",
+      path: "/health",
+      description: "Liveness probe. The only route outside the API prefix and the only one needing no token.",
+      requestBody: [],
+      responseBody: [
+        "{ \"status\": \"ok\", \"timestamp\": \"2026-09-01T00:00:00.000Z\" }"
+      ],
+      errors: "Errors: none — returns 200 whenever the process is up."
+    },
+    {
+      method: "POST",
+      path: "/auth/login",
+      description: "Authenticates by email and password and returns an access and a refresh token. No token required.",
+      requestBody: [
+        "{",
+        "  \"email\":    \"string, required, valid email\",",
+        "  \"password\": \"string, required, min 1\"",
+        "}"
+      ],
+      responseBody: [
+        "{",
+        "  \"accessToken\":  \"<jwt, expires in JWT_EXPIRES_IN (15m)>\",",
+        "  \"refreshToken\": \"<jwt, expires in JWT_REFRESH_EXPIRES_IN (7d)>\",",
+        "  \"user\": { \"id\": \"uuid\", \"email\": \"string\", \"name\": \"string\" }",
+        "}"
+      ],
+      errors: "Errors: 401 if the credentials are wrong or the account is not active; 422 if the body fails validation."
+    },
+    {
+      method: "POST",
+      path: "/auth/google",
+      description: "Authenticates with a Google ID token, provisioning the account on first sign-in. No token required.",
+      requestBody: [
+        "{ \"idToken\": \"string, required — Google ID token\" }"
+      ],
+      responseBody: [
+        "{ \"accessToken\": \"<jwt>\", \"refreshToken\": \"<jwt>\", \"user\": { ... } }"
+      ],
+      errors: "Errors: 401 if the ID token does not verify against GOOGLE_CLIENT_ID."
+    },
+    {
+      method: "POST",
+      path: "/auth/register",
+      description: "Completes an invitation by setting the password on the invited account. No token required.",
+      requestBody: [
+        "{",
+        "  \"token\":    \"string, required — the invitation token\",",
+        "  \"password\": \"string, required, min MIN_PASSWORD_LENGTH, max 100\"",
+        "}"
+      ],
+      responseBody: [
+        "{ \"accessToken\": \"<jwt>\", \"refreshToken\": \"<jwt>\", \"user\": { ... } }"
+      ],
+      errors: "Errors: 404 if the token is unknown; 409 if it is already accepted, revoked or expired."
+    },
+    {
+      method: "POST",
+      path: "/auth/refresh",
+      description: "Exchanges a refresh token for a new token pair and invalidates the one presented.",
+      requestBody: [
+        "{ \"refreshToken\": \"string, required\" }"
+      ],
+      responseBody: [
+        "{ \"accessToken\": \"<jwt>\", \"refreshToken\": \"<jwt>\" }"
+      ],
+      errors: "Errors: 401 if the token is expired, unknown or already revoked."
+    },
+    {
+      method: "POST",
+      path: "/auth/logout",
+      description: "Revokes the supplied refresh token so it can no longer be exchanged.",
+      requestBody: [
+        "{ \"refreshToken\": \"string, required\" }"
+      ],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 401 if the access token is missing or invalid."
+    },
+    {
+      method: "GET",
+      path: "/auth/me",
+      description: "Returns the signed-in user, their department and their effective permission codes.",
+      requestBody: [],
+      responseBody: [
+        "{ \"id\": \"uuid\", \"email\": \"string\", \"name\": \"string\", \"departmentId\": \"uuid\", \"permissions\": [20, 21] }"
+      ],
+      errors: "Errors: 401 if unauthenticated."
+    },
+    {
+      method: "PATCH",
+      path: "/auth/change-password",
+      description: "Changes the signed-in user's password and stamps passwordChangedAt.",
+      requestBody: [
+        "{",
+        "  \"currentPassword\": \"string, required\",",
+        "  \"newPassword\":     \"string, required, min MIN_PASSWORD_LENGTH, max 100\"",
+        "}"
+      ],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 401 if currentPassword is wrong; 422 if newPassword fails the length rule."
+    },
+    {
+      method: "GET",
+      path: "/projects",
+      description: "Lists projects visible in the caller's scope. Query: page, limit, search, status, state.",
+      requestBody: [],
+      responseBody: [
+        "{ \"data\": [ { \"id\": \"uuid\", \"name\": \"string\", \"status\": \"in_progress\", \"progress\": 40 } ],",
+        "  \"meta\": { \"page\": 1, \"limit\": 20, \"total\": 57 } }"
+      ],
+      errors: "Errors: 403 if the caller lacks the projects-read permission at any scope."
+    },
+    {
+      method: "POST",
+      path: "/projects",
+      description: "Creates a project, optionally with its first tasks and subtasks in the same transaction.",
+      requestBody: [
+        "{",
+        "  \"name\":         \"string, required, 1-200\",",
+        "  \"description\":  \"string, optional, max 2000\",",
+        "  \"status\":       \"not_started | in_progress  (required)\",",
+        "  \"priority\":     \"low | medium | high | critical  (required)\",",
+        "  \"category\":     \"string, optional, max 100\",",
+        "  \"clientName\":   \"string, optional, max 200\",",
+        "  \"salesName\":    \"string, optional, max 200\",",
+        "  \"budget\":       \"integer IDR, optional, 0..MAX_BUDGET_IDR\",",
+        "  \"startDate\":    \"ISO 8601 datetime, required\",",
+        "  \"dueDate\":      \"ISO 8601 datetime, required\",",
+        "  \"departmentId\": \"uuid, required\",",
+        "  \"memberIds\":    [\"uuid, optional\"],",
+        "  \"divisionIds\":  [\"uuid, required\"],",
+        "  \"tasks\":        [\"optional — same shape as POST /tasks/batch\"]",
+        "}"
+      ],
+      responseBody: [ "{ \"id\": \"uuid\", \"name\": \"string\", \"state\": \"active\", \"progress\": 0 }" ],
+      errors: "Errors: 403 outside the caller's department scope; 422 on validation. The body is strict — unknown keys are rejected. A project cannot be created directly into in_review, completed or cancelled."
+    },
+    {
+      method: "GET",
+      path: "/projects/deadlines",
+      description: "Returns upcoming project deadlines in the caller's scope, for the dashboard.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"id\": \"uuid\", \"name\": \"string\", \"dueDate\": \"ISO 8601\" } ] }" ],
+      errors: "Errors: 403 if the caller lacks the projects-read permission."
+    },
+    {
+      method: "GET",
+      path: "/projects/{id}",
+      description: "Returns one project with its members, divisions and task rollup.",
+      requestBody: [],
+      responseBody: [ "{ \"id\": \"uuid\", \"name\": \"string\", \"members\": [], \"divisions\": [], \"progress\": 40 }" ],
+      errors: "Errors: 404 if unknown or soft-deleted; 403 if outside the caller's scope."
+    },
+    {
+      method: "PATCH",
+      path: "/projects/{id}",
+      description: "Updates a project. Every field is optional; departmentId and memberIds cannot be changed here.",
+      requestBody: [
+        "{ \"name\": \"...\", \"description\": \"...\", \"status\": \"not_started | in_progress | in_review | cancelled\",",
+        "  \"priority\": \"...\", \"budget\": 0, \"startDate\": \"...\", \"dueDate\": \"...\" }"
+      ],
+      responseBody: [ "{ \"id\": \"uuid\", \"updatedAt\": \"ISO 8601\" }" ],
+      errors: "Errors: 403 outside scope; 404 if unknown; 422 on an illegal status transition."
+    },
+    {
+      method: "PATCH",
+      path: "/projects/{id}/state",
+      description: "Moves a project between the active, archived and deleted states.",
+      requestBody: [ "{ \"state\": \"active | archived | deleted\" }" ],
+      responseBody: [ "{ \"id\": \"uuid\", \"state\": \"archived\" }" ],
+      errors: "Errors: 403 outside scope; 422 if the transition is not legal for the current state."
+    },
+    {
+      method: "POST",
+      path: "/projects/{id}/complete",
+      description: "Marks a project complete, stamping completedAt and writing a complete_project activity log entry.",
+      requestBody: [],
+      responseBody: [ "{ \"id\": \"uuid\", \"status\": \"completed\", \"completedAt\": \"ISO 8601\" }" ],
+      errors: "Errors: 422 if tasks remain incomplete; 403 outside scope."
+    },
+    {
+      method: "DELETE",
+      path: "/projects/{id}",
+      description: "Soft-deletes a project by stamping deleted_at. The row is retained for audit.",
+      requestBody: [],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 403 outside scope; 404 if already deleted."
+    },
+    {
+      method: "GET",
+      path: "/projects/{id}/summary",
+      description: "Task counts, progress and budget rollup for one project — the source for the summary screen.",
+      requestBody: [],
+      responseBody: [ "{ \"taskCounts\": { \"not_started\": 3, \"in_progress\": 5, \"completed\": 12 }, \"progress\": 60 }" ],
+      errors: "Errors: 404 if unknown; 403 outside scope."
+    },
+    {
+      method: "GET",
+      path: "/projects/{id}/members",
+      description: "Lists the members of one project.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"userId\": \"uuid\", \"name\": \"string\", \"assignedAt\": \"ISO 8601\" } ] }" ],
+      errors: "Errors: 404 if the project is unknown; 403 outside scope."
+    },
+    {
+      method: "POST",
+      path: "/projects/{id}/members",
+      description: "Adds a member to a project and writes an add_member activity log entry.",
+      requestBody: [ "{ \"userId\": \"uuid, required\" }" ],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 409 if already a member; 404 if the user or project is unknown."
+    },
+    {
+      method: "DELETE",
+      path: "/projects/{id}/members/{userId}",
+      description: "Removes a member from a project and writes a remove_member activity log entry.",
+      requestBody: [],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 404 if the membership does not exist."
+    },
+    {
+      method: "GET",
+      path: "/tasks",
+      description: "Lists tasks. Query: page, limit, projectId, status, assigneeId, parentTaskId, projectState.",
+      requestBody: [],
+      responseBody: [
+        "{ \"data\": [ { \"id\": \"uuid\", \"name\": \"string\", \"status\": \"in_progress\", \"approvalStatus\": \"pending\" } ],",
+        "  \"meta\": { \"page\": 1, \"limit\": 20, \"total\": 143 } }"
+      ],
+      errors: "Errors: 403 if the caller lacks the tasks-read permission at any scope."
+    },
+    {
+      method: "POST",
+      path: "/tasks",
+      description: "Creates a task, or a subtask when parentTaskId is supplied.",
+      requestBody: [
+        "{",
+        "  \"projectId\":         \"uuid, required\",",
+        "  \"parentTaskId\":      \"uuid, optional — makes this a subtask\",",
+        "  \"name\":              \"string, required, 1-300\",",
+        "  \"description\":       \"string, optional, max 5000\",",
+        "  \"status\":            \"not_started | in_progress  (required)\",",
+        "  \"priority\":          \"low | medium | high | critical  (required)\",",
+        "  \"approverIds\":       [\"uuid, optional\"],",
+        "  \"startDate\":         \"ISO 8601 datetime, required\",",
+        "  \"dueDate\":           \"ISO 8601 datetime, required\",",
+        "  \"budget\":            \"integer IDR, optional\",",
+        "  \"assigneeIds\":       [\"uuid, required, at least one\"],",
+        "  \"tags\":              [\"string, optional, 1-50 each\"],",
+        "  \"dependencyTaskIds\": [\"uuid, optional\"]",
+        "}"
+      ],
+      responseBody: [ "{ \"id\": \"uuid\", \"name\": \"string\", \"status\": \"not_started\", \"approvalStatus\": \"pending\" }" ],
+      errors: "Errors: 422 if the body is invalid or the parent is itself a subtask (nesting is one level deep); 404 if the parent is soft-deleted or in another project; 403 outside scope."
+    },
+    {
+      method: "POST",
+      path: "/tasks/batch",
+      description: "Creates several tasks, and their subtasks, in a single transaction.",
+      requestBody: [ "{ \"tasks\": [ { \"...same shape as POST /tasks\", \"subtasks\": [] } ] }" ],
+      responseBody: [ "{ \"created\": 7 }" ],
+      errors: "Errors: 422 if any item is invalid — the whole batch is rolled back."
+    },
+    {
+      method: "GET",
+      path: "/tasks/{id}",
+      description: "Returns one task with its subtasks, assignees, approvers, tags and dependencies.",
+      requestBody: [],
+      responseBody: [ "{ \"id\": \"uuid\", \"subtasks\": [], \"assignees\": [], \"approvers\": [], \"tags\": [] }" ],
+      errors: "Errors: 404 if unknown or soft-deleted; 403 outside scope."
+    },
+    {
+      method: "GET",
+      path: "/tasks/{id}/subtasks",
+      description: "Lists the subtasks of one task.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"id\": \"uuid\", \"name\": \"string\" } ] }" ],
+      errors: "Errors: 404 if the parent task is unknown."
+    },
+    {
+      method: "PATCH",
+      path: "/tasks/{id}",
+      description: "Updates a task. All fields optional; the body is strict, so unknown keys are rejected.",
+      requestBody: [
+        "{ \"name\": \"...\", \"description\": \"...\",",
+        "  \"status\": \"not_started | in_progress | in_review | cancelled\",",
+        "  \"priority\": \"...\", \"approverIds\": [], \"startDate\": \"...\", \"dueDate\": \"...\",",
+        "  \"budget\": 0, \"parentTaskId\": \"uuid\", \"tags\": [], \"dependencyTaskIds\": [] }"
+      ],
+      responseBody: [ "{ \"id\": \"uuid\", \"updatedAt\": \"ISO 8601\" }" ],
+      errors: "Errors: 422 on an illegal status transition — completed is reached through /complete, not by direct update."
+    },
+    {
+      method: "DELETE",
+      path: "/tasks/{id}",
+      description: "Soft-deletes a task by stamping deleted_at.",
+      requestBody: [],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 403 outside scope; 404 if already deleted."
+    },
+    {
+      method: "POST",
+      path: "/tasks/{id}/complete",
+      description: "Marks a task complete, stamps completedAt and moves it into the approval flow.",
+      requestBody: [],
+      responseBody: [ "{ \"id\": \"uuid\", \"status\": \"completed\", \"approvalStatus\": \"pending\" }" ],
+      errors: "Errors: 422 if subtasks or dependencies are still open; 403 if the caller is not an assignee."
+    },
+    {
+      method: "POST",
+      path: "/tasks/{id}/assignees",
+      description: "Assigns a user to a task and writes an assign_task activity log entry.",
+      requestBody: [ "{ \"userId\": \"uuid, required\" }" ],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 409 if already assigned; 404 if the user or task is unknown."
+    },
+    {
+      method: "DELETE",
+      path: "/tasks/{id}/assignees/{userId}",
+      description: "Unassigns a user and writes an unassign_task activity log entry.",
+      requestBody: [],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 404 if the assignment does not exist; 422 if it is the task's last assignee."
+    },
+    {
+      method: "POST",
+      path: "/tasks/{id}/notify-approvers",
+      description: "Re-notifies the task's approvers that it is waiting on a decision.",
+      requestBody: [],
+      responseBody: [ "{ \"notified\": 2 }" ],
+      errors: "Errors: 422 if the task has no approvers or is not awaiting a decision."
+    },
+    {
+      method: "POST",
+      path: "/tasks/{id}/approve",
+      description: "Records an approval on a task. Only a designated approver may call it.",
+      requestBody: [ "{ \"comment\": \"string, optional\" }" ],
+      responseBody: [ "{ \"id\": \"uuid\", \"approvalStatus\": \"approved\" }" ],
+      errors: "Errors: 403 if the caller is not an approver on this task; 422 if it is not awaiting a decision."
+    },
+    {
+      method: "POST",
+      path: "/tasks/{id}/reject",
+      description: "Rejects a task, returning it to its assignees and opening a revision.",
+      requestBody: [ "{ \"comment\": \"string, required — the reason\" }" ],
+      responseBody: [ "{ \"id\": \"uuid\", \"approvalStatus\": \"rejected\", \"revNum\": 2 }" ],
+      errors: "Errors: 403 if the caller is not an approver; 422 if the task is not awaiting a decision."
+    },
+    {
+      method: "GET",
+      path: "/tasks/{id}/revisions",
+      description: "Lists the numbered revisions of a task with their comments.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"revNum\": 1, \"name\": \"string\", \"comments\": [] } ] }" ],
+      errors: "Errors: 404 if the task is unknown."
+    },
+    {
+      method: "POST",
+      path: "/tasks/{id}/revisions",
+      description: "Opens a new numbered revision on a task rather than editing the original in place.",
+      requestBody: [ "{ \"name\": \"string\", \"description\": \"string, optional\", \"comment\": \"string, optional\" }" ],
+      responseBody: [ "{ \"revNum\": 3 }" ],
+      errors: "Errors: 403 if the caller is not an assignee; 422 if the task is not in a revisable state."
+    },
+    {
+      method: "GET",
+      path: "/users",
+      description: "Lists users in the caller's scope. Query: page, limit, search, departmentId, status.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"id\": \"uuid\", \"name\": \"string\", \"jobRole\": \"string\", \"status\": \"active\" } ], \"meta\": { ... } }" ],
+      errors: "Errors: 403 if the caller lacks the users-read permission at any scope."
+    },
+    {
+      method: "GET",
+      path: "/users/approvers",
+      description: "Lists the users eligible to be named as task approvers in the caller's scope.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"id\": \"uuid\", \"name\": \"string\" } ] }" ],
+      errors: "Errors: 401 if unauthenticated."
+    },
+    {
+      method: "GET",
+      path: "/users/{id}",
+      description: "Returns one user's profile. Use /users/me/profile to update your own.",
+      requestBody: [],
+      responseBody: [ "{ \"id\": \"uuid\", \"name\": \"string\", \"email\": \"string\", \"departmentId\": \"uuid\" }" ],
+      errors: "Errors: 404 if unknown or soft-deleted; 403 outside scope."
+    },
+    {
+      method: "PATCH",
+      path: "/users/me/profile",
+      description: "Updates the signed-in user's own profile and notification preferences.",
+      requestBody: [
+        "{ \"name\": \"...\", \"jobRole\": \"...\", \"phone\": \"...\", \"bio\": \"...\", \"location\": \"...\",",
+        "  \"emailNotifications\": true, \"projectUpdates\": true, \"systemAlerts\": true,",
+        "  \"digestFrequency\": \"daily | weekly | monthly | never\", \"language\": \"en\" }"
+      ],
+      responseBody: [ "{ \"id\": \"uuid\", \"updatedAt\": \"ISO 8601\" }" ],
+      errors: "Errors: 422 on validation failure."
+    },
+    {
+      method: "GET",
+      path: "/users/me/stats",
+      description: "Task and project counts for the signed-in user. /users/{id}/stats does the same for another user.",
+      requestBody: [],
+      responseBody: [ "{ \"tasks\": { \"open\": 4, \"completed\": 21 }, \"projects\": 3 }" ],
+      errors: "Errors: 403 when reading another user outside the caller's scope."
+    },
+    {
+      method: "GET",
+      path: "/users/me/report",
+      description: "The signed-in user's report data as JSON. /users/{id}/report does the same for another user.",
+      requestBody: [],
+      responseBody: [ "{ \"period\": { ... }, \"projects\": [], \"tasks\": [] }" ],
+      errors: "Errors: 403 when reading another user outside the caller's scope."
+    },
+    {
+      method: "GET",
+      path: "/users/me/report/docx",
+      description: "The same report rendered as a Word document. /users/{id}/report/docx targets another user.",
+      requestBody: [],
+      responseBody: [ "binary — application/vnd.openxmlformats-officedocument.wordprocessingml.document" ],
+      errors: "Errors: 403 outside scope."
+    },
+    {
+      method: "GET",
+      path: "/users/me/report/weekly/docx",
+      description: "The weekly report as a Word document, drafted with Gemini from the period's activity.",
+      requestBody: [],
+      responseBody: [ "binary — application/vnd.openxmlformats-officedocument.wordprocessingml.document" ],
+      errors: "Errors: 403 outside scope; 502 if the model call fails."
+    },
+    {
+      method: "GET",
+      path: "/permissions",
+      description: "Lists the permission catalogue — every resource/action pair and its numeric code.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"id\": \"uuid\", \"resource\": \"tasks\", \"action\": \"create\", \"code\": 21 } ] }" ],
+      errors: "Errors: 403 if the caller lacks the permissions-read permission."
+    },
+    {
+      method: "GET",
+      path: "/permissions/config",
+      description: "Returns the scope-level configuration behind the _1 / _2 / _3 suffixes.",
+      requestBody: [],
+      responseBody: [ "{ \"scopes\": { \"_1\": \"organisation\", \"_2\": \"department\", \"_3\": \"division\" } }" ],
+      errors: "Errors: 401 if unauthenticated."
+    },
+    {
+      method: "GET",
+      path: "/permissions/users/{userId}",
+      description: "Lists the permission codes currently held by one user.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"code\": 21, \"assignedBy\": \"uuid\" } ] }" ],
+      errors: "Errors: 403 outside scope; 404 if the user is unknown."
+    },
+    {
+      method: "POST",
+      path: "/permissions/assign",
+      description: "Grants permission codes to a user. A grant may never be wider than the granter's own scope.",
+      requestBody: [ "{ \"userId\": \"uuid, required\", \"codes\": [21, 22] }" ],
+      responseBody: [ "{ \"granted\": 2 }" ],
+      errors: "Errors: 403 if any code exceeds the caller's scope level — see assertGrantableCodes; 404 if the user is unknown."
+    },
+    {
+      method: "DELETE",
+      path: "/permissions/users/{userId}/permissions/{permissionId}",
+      description: "Revokes one permission from a user.",
+      requestBody: [],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 403 outside scope; 404 if the grant does not exist."
+    },
+    {
+      method: "POST",
+      path: "/invitations",
+      description: "Issues a token invitation carrying the permissions to grant when it is accepted.",
+      requestBody: [ "{ \"email\": \"string, required\", \"departmentId\": \"uuid\", \"permissionCodes\": [20, 21] }" ],
+      responseBody: [ "{ \"id\": \"uuid\", \"status\": \"pending\", \"expiresAt\": \"ISO 8601\" }" ],
+      errors: "Errors: 403 if a requested permission exceeds the caller's scope; 409 if an invitation is already pending for that address."
+    },
+    {
+      method: "GET",
+      path: "/invitations/{token}",
+      description: "Resolves an invitation token so the create-password screen can show who was invited. No token required.",
+      requestBody: [],
+      responseBody: [ "{ \"email\": \"string\", \"status\": \"pending\", \"expiresAt\": \"ISO 8601\" }" ],
+      errors: "Errors: 404 if unknown; 410 semantics are carried as status expired or revoked in the body."
+    },
+    {
+      method: "GET",
+      path: "/departments",
+      description: "Lists departments. /departments/{id}/metrics returns that department's rollup.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"id\": \"uuid\", \"name\": \"string\", \"adminId\": \"uuid\" } ] }" ],
+      errors: "Errors: 403 if the caller lacks the departments-read permission."
+    },
+    {
+      method: "GET",
+      path: "/departments/{id}/divisions",
+      description: "Lists a department's divisions. Nested routes manage division members.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"id\": \"uuid\", \"name\": \"string\", \"managerId\": \"uuid\" } ] }" ],
+      errors: "Errors: 404 if the department is unknown; 403 outside scope."
+    },
+    {
+      method: "POST",
+      path: "/attachments",
+      description: "Uploads a file against a project or a task. multipart/form-data, handled by multer.",
+      requestBody: [
+        "multipart/form-data",
+        "  file       — the binary, required",
+        "  projectId  — uuid, one of projectId or taskId required",
+        "  taskId     — uuid"
+      ],
+      responseBody: [ "{ \"id\": \"uuid\", \"filename\": \"string\", \"url\": \"string\" }" ],
+      errors: "Errors: 413 if the body exceeds the 10 MB cap; 422 if neither projectId nor taskId is supplied."
+    },
+    {
+      method: "POST",
+      path: "/attachments/link",
+      description: "Records a Google Drive link as an attachment instead of uploading a copy.",
+      requestBody: [ "{ \"url\": \"string, required\", \"projectId\": \"uuid\", \"taskId\": \"uuid\" }" ],
+      responseBody: [ "{ \"id\": \"uuid\", \"url\": \"string\" }" ],
+      errors: "Errors: 422 if the URL is not a resolvable Drive link."
+    },
+    {
+      method: "DELETE",
+      path: "/attachments/{id}",
+      description: "Deletes an attachment and writes a delete_attachment activity log entry.",
+      requestBody: [],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 403 if the caller did not upload it and lacks the delete permission."
+    },
+    {
+      method: "GET",
+      path: "/activity-logs",
+      description: "The audit trail. Query: page, limit, feature, action, userId, projectId, date range.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"id\": \"uuid\", \"feature\": \"tasks\", \"action\": \"approve_task\", \"userId\": \"uuid\", \"createdAt\": \"ISO 8601\" } ], \"meta\": { ... } }" ],
+      errors: "Errors: 403 if the caller lacks the activity-read permission at any scope."
+    },
+    {
+      method: "GET",
+      path: "/activity-logs/stats",
+      description: "Aggregated activity counts. /performance and /summary give the other two dashboard shapes.",
+      requestBody: [],
+      responseBody: [ "{ \"byFeature\": { \"tasks\": 412 }, \"byAction\": { \"create_task\": 88 } }" ],
+      errors: "Errors: 403 outside scope."
+    },
+    {
+      method: "POST",
+      path: "/ai/chat",
+      description: "Conversational endpoint backed by Gemini through LangChain.",
+      requestBody: [ "{ \"messages\": [ { \"role\": \"user\", \"content\": \"string\" } ] }" ],
+      responseBody: [ "{ \"reply\": \"string\" }" ],
+      errors: "Errors: 502 if the model call fails; 401 if unauthenticated."
+    },
+    {
+      method: "POST",
+      path: "/ai/blueprint",
+      description: "Drafts a project structure from a description. /blueprint/spec and /blueprint/structured return the other two shapes.",
+      requestBody: [ "{ \"description\": \"string, required\" }" ],
+      responseBody: [ "{ \"blueprint\": { \"tasks\": [] } }" ],
+      errors: "Errors: 502 if the model call fails. Output is a draft — it is never written to the tracker without an explicit create call."
+    },
+    {
+      method: "GET",
+      path: "/tags",
+      description: "Lists the tags available for tasks.",
+      requestBody: [],
+      responseBody: [ "{ \"data\": [ { \"id\": \"uuid\", \"name\": \"string\" } ] }" ],
+      errors: "Errors: 401 if unauthenticated."
+    },
+    {
+      method: "POST",
+      path: "/support",
+      description: "Raises a support ticket by email to SUPPORT_TICKET_TO.",
+      requestBody: [ "{ \"subject\": \"string, required\", \"message\": \"string, required\" }" ],
+      responseBody: [ "{ \"status\": \"ok\" }" ],
+      errors: "Errors: 502 if SMTP delivery fails."
+    }
+  ]
+
+  paginationNote: "List endpoints take `page` and `limit` as query parameters — both coerced to positive integers and both optional, defaulting to page 1 and 20 items. `/projects` and `/users` additionally accept `search`; `/tasks` accepts `projectId`, `status`, `assigneeId`, `parentTaskId` and `projectState`, which defaults to active so archived and deleted projects' tasks stay out of ordinary listings. A paginated response carries the rows in `data` and the page, limit and total in `meta`."
+
+  table apiChangelog {
+    version: "Version" w0.8
+    date:    "Date"    w1
+    change:  "Change"  w3
+  }
+  rows apiChangelog [
+    { version: "v1", date: "Sept 1, 2026", change: "Initial documented surface: auth, users, permissions, projects, tasks, tags, ai, attachments, activity-logs, invitations, departments, support" }
+  ]
+}
+
+// =============================================================================
+// Part 8 — User Acceptance Testing
+// =============================================================================
+part uat {
+  object headerFooterLabels { productNameLabel: "Project Tracker" }
+  object metadata { status: "Draft", version: "V1", lastUpdate: "Sept 1, 2026" }
+
+  objectivesScope: "Confirms that Project Tracker supports a department's real planning and approval workflow end to end, and that scope boundaries hold for every role. The goal is confidence that work cannot be marked done without an attributable approval, and that no user sees data outside their scope."
+
+  list featuresToTest {
+    item "Sign-in by password and by Google, plus token refresh and logout"
+    item "Project creation, membership, division assignment and archiving"
+    item "Task creation, subtasks, multiple assignees, tags and dependencies"
+    item "Task completion, approver notification, and approve/reject/revise decisions"
+    item "Revision history and comments on a rejected task"
+    item "Permission grants and the _1/_2/_3 scope boundaries for all five roles"
+    item "Invitations, including the permissions granted on acceptance"
+    item "Attachments as uploads and as Google Drive links"
+    item "Activity log completeness for every logged action"
+    item "Report generation, including the .docx exports"
+  }
+
+  table testStrategy {
+    level:       "Level"       w1
+    description: "Description" w2.4
+    owner:       "Owner"       w1
+  }
+  rows testStrategy [
+    { level: "Unit",        description: "Vitest suites over services and utilities in both applications", owner: "Developers" },
+    { level: "Integration", description: "Vitest against a dedicated MySQL test database via vitest.integration.config.ts", owner: "Developers" },
+    { level: "Regression",  description: "Suites under tests/regressions guarding previously fixed defects", owner: "Developers" },
+    { level: "E2E",         description: "Playwright specs driving the dashboard against a running stack", owner: "QA Engineer" },
+    { level: "UAT",         description: "Scripted business scenarios executed by department representatives", owner: "Business/UAT rep" }
+  ]
+
+  table testEnvironments {
+    environment: "Environment" w1
+    url:         "URL"         w1.4
+    database:    "Database"    w1.4
+    notes:       "Notes"       w1.6
+  }
+  rows testEnvironments [
+    { environment: "Local",       url: "http://localhost:3000", database: "MySQL 8.4 via Docker Compose", notes: "Adminer on :8080 for inspection" },
+    { environment: "Integration", url: "n/a — API only",        database: "project_tracker_test",         notes: "Reset by the integration suite" },
+    { environment: "Staging",     url: "[staging URL]",         database: "[staging database]",           notes: "NODE_ENV=staging in the container image" },
+    { environment: "Production",  url: "[production URL]",      database: "[production database]",        notes: "No test execution against production" }
+  ]
+
+  list testAccounts {
+    item "Seeded accounts are created by the prisma seed scripts — roles, users, projects and a dedicated MCP user"
+    item "Credentials live in the team password manager; never paste them into this document or into a ticket"
+    item "Cover all five roles — SuperAdmin, Department Admin, Division Manager, Member and Viewer — when testing scope"
+    item "Browsers: current Chrome, Edge, Firefox and Safari"
+  }
+
+  table rolesResponsibilities {
+    role:           "Role"           w1.2
+    responsibility: "Responsibility" w2.8
+  }
+  rows rolesResponsibilities [
+    { role: "QA Engineer",     responsibility: "Writes and executes test cases; owns the Playwright suite and defect triage" },
+    { role: "Dev Lead",        responsibility: "Reviews coverage, fixes defects and confirms the regression suite grows with each fix" },
+    { role: "Business/UAT rep", responsibility: "Executes the business scenarios and signs off that they match real practice" },
+    { role: "Product Lead",    responsibility: "Accepts or rejects the release based on the exit criteria" }
+  ]
+
+  table testCases {
+    id:              "ID"              w0.6
+    relatedUseCase:  "Use Case"        w0.7
+    steps:           "Steps"           w2.4
+    expectedResult:  "Expected Result" w2.2
+    status:          "Status"          w0.7
+  }
+  rows testCases [
+    { id: "TC-01", relatedUseCase: "UC-01", steps: "1. Open the login page 2. Enter valid credentials 3. Submit", expectedResult: "Access and refresh tokens issued; dashboard loads; lastLoginAt updated", status: "Not Run" },
+    { id: "TC-02", relatedUseCase: "UC-01", steps: "1. Sign in with Google on a new account", expectedResult: "Account provisioned and signed in; googleId stored on the user", status: "Not Run" },
+    { id: "TC-03", relatedUseCase: "UC-02", steps: "1. As a department admin, create a project with dates and budget", expectedResult: "Project created in the admin's own department, state active, progress 0", status: "Not Run" },
+    { id: "TC-04", relatedUseCase: "UC-03", steps: "1. Create a task 2. Create a second task with the first as parent", expectedResult: "Subtask stored with parent_task_id set and shown nested", status: "Not Run" },
+    { id: "TC-05", relatedUseCase: "UC-04", steps: "1. Add two assignees to a task 2. Remove one", expectedResult: "Both assignment and removal recorded and reflected in the activity log", status: "Not Run" },
+    { id: "TC-06", relatedUseCase: "UC-05", steps: "1. As the assignee, mark the task complete", expectedResult: "Task marked complete, completedAt set, approvers notified", status: "Not Run" },
+    { id: "TC-07", relatedUseCase: "UC-06", steps: "1. As an approver, reject the completed task with a comment", expectedResult: "Approval status rejected; a revision is opened carrying the comment", status: "Not Run" },
+    { id: "TC-08", relatedUseCase: "UC-07", steps: "1. As the assignee, respond on the revision and resubmit", expectedResult: "Revision number increments; original task record is not overwritten", status: "Not Run" },
+    { id: "TC-09", relatedUseCase: "UC-08", steps: "1. Invite a user with a chosen permission set 2. Accept the invitation", expectedResult: "Account created with exactly the invited permissions; invitation marked accepted", status: "Not Run" },
+    { id: "TC-10", relatedUseCase: "UC-09", steps: "1. Upload a file to a task 2. Link a Drive document", expectedResult: "Both appear as attachments and are logged", status: "Not Run" },
+    { id: "TC-11", relatedUseCase: "UC-10", steps: "1. Archive a completed project", expectedResult: "Project state becomes archived and it leaves the active list but stays retrievable", status: "Not Run" },
+    { id: "TC-12", relatedUseCase: "UC-11", steps: "1. Download the personal report 2. Download the weekly report", expectedResult: "Both .docx files download and contain the signed-in user's data", status: "Not Run" },
+    { id: "TC-13", relatedUseCase: "UC-02", steps: "1. As a division manager, request a project in another division", expectedResult: "403 FORBIDDEN — scope boundary holds", status: "Not Run" },
+    { id: "TC-14", relatedUseCase: "UC-08", steps: "1. As a division-scoped user, try to grant a department-scoped permission", expectedResult: "Rejected — a grant may never be wider than the granter's own scope", status: "Not Run" },
+    { id: "TC-15", relatedUseCase: "UC-03", steps: "1. Submit a task with a missing due date", expectedResult: "422 VALIDATION_ERROR naming dueDate; nothing is written", status: "Not Run" }
+  ]
+
+  table nonFunctionalTesting {
+    type:     "Type"     w1
+    criteria: "Criteria" w2.4
+    required: "Required" w0.7
+    status:   "Status"   w0.7
+  }
+  rows nonFunctionalTesting [
+    { type: "Security",      criteria: "Every endpoint rejects an absent or expired token; scope boundaries hold for all five roles", required: "Yes", status: "Not Run" },
+    { type: "Performance",   criteria: "[Define the target — e.g. project list under 500 ms at p95]", required: "Yes", status: "Not Run" },
+    { type: "Accessibility", criteria: "[Define the target — e.g. WCAG 2.1 AA on the primary flows]", required: "Yes", status: "Not Run" },
+    { type: "Compatibility", criteria: "Primary flows pass on current Chrome, Edge, Firefox and Safari", required: "Yes", status: "Not Run" }
+  ]
+
+  table bugSeverityDefinitions {
+    severity:   "Severity"   w1
+    definition: "Definition" w3
+  }
+  rows bugSeverityDefinitions [
+    { severity: "S0 — Blocker", definition: "Data loss, a scope breach exposing another department's data, or the platform is unusable" },
+    { severity: "S1 — Critical", definition: "A core flow — sign-in, project or task creation, approval — is broken with no workaround" },
+    { severity: "S2 — Major",   definition: "A feature is broken but a workaround exists, or a report is materially wrong" },
+    { severity: "S3 — Minor",   definition: "Cosmetic or wording issue with no effect on the data or the flow" }
+  ]
+}
+
+// =============================================================================
+// Part 9 — Deployment Guide
+// =============================================================================
+part deploymentGuide {
+  object headerFooterLabels { productNameLabel: "Project Tracker" }
+  object metadata { status: "Draft", version: "V1", lastUpdate: "Sept 1, 2026" }
+
+  overview: "Two Docker images are deployed: the React client, built with Bun and served by nginx, and the API, built with Bun and run as the compiled server on port 3000. MySQL 8.4 runs as its own service. Release cadence is [define — continuous on merge, or manual per release]."
+
+  table prerequisites {
+    requirement: "Requirement" w1.2
+    details:     "Details"     w2.8
+  }
+  rows prerequisites [
+    { requirement: "Container runtime",  details: "Docker with Compose available on the target host" },
+    { requirement: "Database",           details: "MySQL 8.4 reachable from the API container, with a schema for the application" },
+    { requirement: "Environment values", details: "Every variable in the configuration table below, supplied as environment variables" },
+    { requirement: "Google credentials", details: "OAuth client ID, plus Drive client ID, secret and refresh token" },
+    { requirement: "SMTP credentials",   details: "Host, port, user, password and from-address for outbound mail" },
+    { requirement: "Gemini API key",     details: "Required only for the AI features; the tracker runs without it" }
+  ]
+
+  table environments {
+    environment: "Environment" w1
+    purpose:     "Purpose"     w2
+    branch:      "Branch"      w1
+  }
+  rows environments [
+    { environment: "Development", purpose: "Local development against Docker Compose MySQL", branch: "[branch]" },
+    { environment: "Staging",     purpose: "Pre-release verification; NODE_ENV=staging",     branch: "[branch]" },
+    { environment: "Production",  purpose: "Live service",                                    branch: "[branch]" }
+  ]
+
+  list envExample {
+    item "# --- Database -------------------------------------------------------"
+    item "DATABASE_URL=mysql://user:password@127.0.0.1:3306/project_management"
+    item "MCP_DATABASE_URL=mysql://user:password@127.0.0.1:3306/project_management"
+    item ""
+    item "# --- Auth -----------------------------------------------------------"
+    item "JWT_SECRET=                 # at least 32 characters"
+    item "JWT_EXPIRES_IN=15m"
+    item "JWT_REFRESH_SECRET=         # at least 32 characters"
+    item "JWT_REFRESH_EXPIRES_IN=7d"
+    item ""
+    item "# --- Server ---------------------------------------------------------"
+    item "PORT=3000"
+    item "NODE_ENV=development        # development | staging | production | test"
+    item "API_PREFIX=/api/v1"
+    item "APP_URL=http://localhost:3000"
+    item "CORS_ORIGIN=http://localhost:5173"
+    item "MCP_PUBLIC_BASE_URL=http://localhost:3000"
+    item ""
+    item "# --- Mail -----------------------------------------------------------"
+    item "SMTP_HOST=smtp.gmail.com"
+    item "SMTP_PORT=465"
+    item "SMTP_USER="
+    item "SMTP_PASS="
+    item "SMTP_FROM="
+    item "SUPPORT_TICKET_TO=product.dev@pointstar.co.id"
+    item ""
+    item "# --- Google ---------------------------------------------------------"
+    item "GOOGLE_CLIENT_ID="
+    item "GOOGLE_DRIVE_CLIENT_ID="
+    item "GOOGLE_DRIVE_CLIENT_SECRET="
+    item "GOOGLE_DRIVE_REFRESH_TOKEN="
+    item ""
+    item "# --- AI (Gemini) ----------------------------------------------------"
+    item "GOOGLE_API_KEY="
+    item "GEMINI_MODEL=gemini-3.5-flash"
+    item "GEMINI_MODEL_EXTRACTOR=gemini-3.1-flash-lite"
+    item "GEMINI_MODEL_INTERVIEWER=gemini-3.5-flash"
+    item "GEMINI_MODEL_BLUEPRINT=gemini-3.5-flash"
+    item "GEMINI_MODEL_WEEKLY_REPORT=gemini-3.1-flash-lite"
+  }
+
+  list deploymentSteps {
+    item "# 1. Bring up the database (local / single-host)"
+    item "docker compose -f project-tracker-api/docker/docker-compose.yml up -d"
+    item ""
+    item "# 2. Apply schema migrations"
+    item "cd project-tracker-api"
+    item "npm run prisma:generate"
+    item "npm run prisma:migrate        # prisma migrate dev, non-production"
+    item ""
+    item "# 3. Seed reference data (first deploy only)"
+    item "npm run seed:roles"
+    item "npm run seed:users"
+    item "npm run seed:mcp-user"
+    item ""
+    item "# 4. Build the API image and start it"
+    item "docker build -t project-tracker-api ."
+    item "docker run -d --env-file .env -p 3000:3000 project-tracker-api"
+    item ""
+    item "# 5. Build the client image and start it"
+    item "cd ../project-tracker"
+    item "docker build -t project-tracker-web ."
+    item "docker run -d -p 80:80 project-tracker-web"
+    item ""
+    item "# 6. Verify"
+    item "curl -fsS http://localhost:3000/health"
+  }
+
+  table configuration {
+    variable:    "Variable"    w1.4
+    description: "Description" w2.4
+    required:    "Required"    w0.7
+  }
+  rows configuration [
+    { variable: "DATABASE_URL",        description: "MySQL connection string for the application", required: "Yes" },
+    { variable: "MCP_DATABASE_URL",    description: "Connection string used by the MCP server",     required: "Yes" },
+    { variable: "JWT_SECRET",          description: "Access-token signing secret, min 32 chars",    required: "Yes" },
+    { variable: "JWT_EXPIRES_IN",      description: "Access-token lifetime",                        required: "No — defaults to 15m" },
+    { variable: "JWT_REFRESH_SECRET",  description: "Refresh-token signing secret, min 32 chars",   required: "Yes" },
+    { variable: "JWT_REFRESH_EXPIRES_IN", description: "Refresh-token lifetime",                    required: "No — defaults to 7d" },
+    { variable: "PORT",                description: "Port the API listens on",                      required: "No — defaults to 3000" },
+    { variable: "NODE_ENV",            description: "development, production, test or staging",     required: "No — defaults to development" },
+    { variable: "CORS_ORIGIN",         description: "Allowed browser origin",                       required: "Yes" },
+    { variable: "API_PREFIX",          description: "Path prefix for every route",                  required: "No — defaults to /api/v1" },
+    { variable: "APP_URL",             description: "Public base URL of the application",           required: "No — defaults to localhost:3000" },
+    { variable: "MCP_PUBLIC_BASE_URL", description: "Public base URL advertised by the MCP server", required: "No — defaults to localhost:3000" },
+    { variable: "SMTP_HOST",           description: "Outbound mail host",                           required: "No — defaults to smtp.gmail.com" },
+    { variable: "SMTP_PORT",           description: "Outbound mail port",                           required: "No — defaults to 465" },
+    { variable: "SMTP_USER",           description: "SMTP username",                                required: "Yes" },
+    { variable: "SMTP_PASS",           description: "SMTP password",                                required: "Yes" },
+    { variable: "SMTP_FROM",           description: "From-address on outbound mail",                required: "Yes" },
+    { variable: "SUPPORT_TICKET_TO",   description: "Destination for support tickets",              required: "No — has a default" },
+    { variable: "GOOGLE_CLIENT_ID",    description: "OAuth client ID for Google sign-in",           required: "Yes" },
+    { variable: "GOOGLE_DRIVE_CLIENT_ID", description: "Drive OAuth client ID",                     required: "Yes" },
+    { variable: "GOOGLE_DRIVE_CLIENT_SECRET", description: "Drive OAuth client secret",             required: "Yes" },
+    { variable: "GOOGLE_DRIVE_REFRESH_TOKEN", description: "Long-lived Drive refresh token",        required: "Yes" },
+    { variable: "GOOGLE_API_KEY",      description: "API key for the Gemini models",                required: "Yes" },
+    { variable: "GEMINI_MODEL",        description: "Default Gemini model",                         required: "No — has a default" }
+  ]
+
+  list rollbackSteps {
+    item "# 1. Identify the previous good image"
+    item "docker images project-tracker-api"
+    item ""
+    item "# 2. Stop the current container and start the previous tag"
+    item "docker stop <current-container>"
+    item "docker run -d --env-file .env -p 3000:3000 project-tracker-api:<previous-tag>"
+    item ""
+    item "# 3. Do the same for the client if it was part of the release"
+    item "docker run -d -p 80:80 project-tracker-web:<previous-tag>"
+    item ""
+    item "# 4. Verify"
+    item "curl -fsS http://localhost:3000/health"
+  }
+
+  rollbackNote: "If the release included a Prisma migration, rolling the image back is not enough — the schema is still forward. Mark the migration rolled back with `npm run prisma:rollback` (prisma migrate resolve --rolled-back) and apply the corresponding down migration before restarting the previous image. Take a database backup before any migration that drops or renames a column."
+
+  list postDeploymentChecklist {
+    item "GET /health returns status ok"
+    item "Sign-in works with both password and Google"
+    item "A project and a task can be created and appear in the list"
+    item "A task approval records correctly and writes an activity-log entry"
+    item "Outbound mail is delivered (invitation or notification)"
+    item "An attachment uploads and a Drive link resolves"
+    item "A report .docx downloads and opens"
+    item "Server logs show no unexpected 500 responses"
+  }
+
+  table monitoring {
+    what:           "What"            w1.2
+    tool:           "Tool"            w1.2
+    alertRecipient: "Alert Recipient" w1.4
+  }
+  rows monitoring [
+    { what: "Uptime — GET /health", tool: "[define]", alertRecipient: "[define]" },
+    { what: "Error logs",           tool: "[define]", alertRecipient: "[define]" },
+    { what: "Database health",      tool: "[define]", alertRecipient: "[define]" },
+    { what: "Mail delivery failures", tool: "[define]", alertRecipient: "[define]" }
+  ]
+}
+
+// =============================================================================
+// Part 13 — Glossary
+// =============================================================================
+part glossary {
+  object headerFooterLabels { productNameLabel: "Project Tracker" }
+  object metadata { status: "Draft", version: "V1", lastUpdate: "Sept 1, 2026" }
+
+  table terms {
+    term:       "Term"       w1
+    definition: "Definition" w3
+  }
+  rows terms [
+    { term: "Department",     definition: "The top-level organisational unit. Every user belongs to exactly one, and every project is owned by one." },
+    { term: "Division",       definition: "A subdivision of a department, led by a manager. A user may belong to several." },
+    { term: "Scope level",    definition: "The organisational boundary a permission applies at: _1 organisation, _2 department, _3 division." },
+    { term: "Permission code", definition: "A numeric value standing for one capability, held against a user and checked by route middleware." },
+    { term: "Approver",       definition: "A user designated on a task who may record approved, rejected or revise against it." },
+    { term: "Revision",       definition: "A numbered record opened against a task when changes are requested, carrying its own comments." },
+    { term: "Project state",  definition: "Whether a project is active, archived or deleted — distinct from its status." },
+    { term: "Project status", definition: "Progress of the work: not_started, in_progress, in_review, completed or cancelled." },
+    { term: "Soft delete",    definition: "Marking a record with deleted_at rather than removing it, so it leaves normal queries but stays auditable." },
+    { term: "Activity log",   definition: "The audit trail of feature/action events attributed to a user." },
+    { term: "MCP",            definition: "Model Context Protocol — the interface through which AI agents query the platform." },
+    { term: "Blueprint",      definition: "An AI-generated draft project structure produced by the AI feature from a description." },
+    { term: "Cradle",         definition: "The Awilix registration map naming every service and repository resolvable from the container." },
+    { term: "JWT",            definition: "JSON Web Token — the signed bearer token carrying the caller's identity." },
+    { term: "Prisma",         definition: "The ORM and migration tool; the only path from application code to the database." }
+  ]
+}
+
+// =============================================================================
+// Part 14 — Appendix
+// =============================================================================
+part appendix {
+  object headerFooterLabels { productNameLabel: "Project Tracker" }
+  object metadata { status: "Draft", version: "V1", lastUpdate: "Sept 1, 2026" }
+
+  table resources {
+    resource: "Resource" w1.4
+    link:     "Link"     w2.6
+  }
+  rows resources [
+    { resource: "Frontend architecture",  link: "project-tracker/docs/ARCHITECTURE.md" },
+    { resource: "Backend architecture",   link: "project-tracker-api/docs/architecture.md" },
+    { resource: "Roles & permissions",    link: "project-tracker-api/docs/roles.md" },
+    { resource: "Granular RBAC design",   link: "project-tracker-api/docs/granular-rbac-design.md" },
+    { resource: "Project hierarchy",      link: "project-tracker-api/docs/project-hierarchy.md" },
+    { resource: "API reference (OpenAPI)", link: "project-tracker-api/docs/openapi.yaml" },
+    { resource: "Data model source",      link: "project-tracker-api/prisma/schema.prisma" },
+    { resource: "Engineering rules (FE)", link: "project-tracker/docs/RULES.md" },
+    { resource: "Engineering rules (API)", link: "project-tracker-api/docs/RULES.md" },
+    { resource: "Testing notes",          link: "project-tracker-api/docs/testing/" },
+    { resource: "Local database stack",   link: "project-tracker-api/docker/docker-compose.yml" },
+    { resource: "Design files (Figma)",   link: "[link]" },
+    { resource: "CI/CD pipeline",         link: "[link]" },
+    { resource: "Incident / postmortem log", link: "[link]" }
+  ]
+}

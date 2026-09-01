@@ -1,5 +1,5 @@
-doc "Bare Ident Value" type=docx
+doc "Bare Ident Value" type=projectBrief
 
 section overview {
-  executiveSummary: bareword
+  overview: bareword
 }

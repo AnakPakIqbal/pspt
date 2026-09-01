@@ -1,7 +1,7 @@
 # hash comment at top
-doc "Comments Test" type=docx // trailing slash comment
+doc "Comments Test" type=projectBrief // trailing slash comment
 
 // a full-line comment
 section overview {
-  executiveSummary: "Has comments around it" # trailing hash comment
+  overview: "Has comments around it" # trailing hash comment
 }

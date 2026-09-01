@@ -1,4 +1,4 @@
-doc "Rows Missing Bracket" type=docx
+doc "Rows Missing Bracket" type=projectBrief
 
 section business {
   table features {

@@ -1,12 +1,12 @@
-doc "Trailing Comma Rows" type=docx
+doc "Trailing Comma Rows" type=projectBrief
 
 section business {
-  table features {
-    name: "Feature Name" w1
-    description: "Description" w2
+  table keyModules {
+    module: "Module" w1
+    features: "Core Features" w2
   }
-  rows features [
-    { name: "A", description: "first", },
-    { name: "B", description: "second" },
+  rows keyModules [
+    { module: "A", features: "first", },
+    { module: "B", features: "second" },
   ]
 }

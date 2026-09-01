@@ -1,8 +1,8 @@
-doc "Empty Table No Rows" type=docx
+doc "Empty Table No Rows" type=projectBrief
 
 section business {
-  table features {
-    name: "Feature Name" w1
-    description: "Description" w2
+  table keyModules {
+    module: "Module" w1
+    features: "Core Features" w2
   }
 }

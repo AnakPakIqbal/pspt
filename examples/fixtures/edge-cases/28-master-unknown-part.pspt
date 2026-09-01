@@ -1,0 +1,9 @@
+doc "Unknown Part" type=master
+
+part notARealPart {
+  overview: "should produce a WARNING comment, not fail"
+}
+
+section stray {
+  overview: "sits outside any part block — also a WARNING"
+}

@@ -1,0 +1,33 @@
+// A row cell may be a [list] or an {object}. Without these, the setters with
+// nested payloads (endpoint bodies, entity columns, story bullets) are
+// unreachable from the DSL.
+doc "Nested Value Forms" type=techDoc
+
+section api {
+  table endpoints {
+    method: "Method" w1
+    path:   "Path"   w1
+  }
+  rows endpoints [
+    {
+      method: "POST",
+      path: "/tasks",
+      description: "Creates a task.",
+      requestBody: [ "{", "  \"name\": \"string\"", "}" ],
+      responseBody: [],
+      errors: "Errors: 422 on validation failure."
+    }
+  ]
+
+  table entityDetails {
+    tableName: "Table" w1
+  }
+  rows entityDetails [
+    {
+      tableName: "tasks",
+      columns: [
+        { column: "id", type: "CHAR(36)", constraints: "PK", description: "Identifier" },
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-doc "Missing Row Field Value" type=docx
+doc "Missing Row Field Value" type=projectBrief
 
 section business {
   table features {

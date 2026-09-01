@@ -1,0 +1,5 @@
+doc "Screenshot Caption Fields" type=userManual
+
+section manual {
+  gettingStartedScreenshot: "[Insert screenshot of the login screen]"
+}

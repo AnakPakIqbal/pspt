@@ -1,0 +1,16 @@
+// Data keys come from the SDKs, not from this grammar — setNamingConventions
+// really does take an `item` key, so reserved words must work as names.
+doc "Keyword As Data Key" type=techDoc
+
+section technical {
+  table namingConventions {
+    item:       "Item"       w1
+    convention: "Convention" w1
+    example:    "Example"    w1
+  }
+  rows namingConventions [
+    { item: "Component file", convention: "PascalCase", example: "TaskCard.tsx" }
+  ]
+
+  object metadata { status: "Draft", version: "V1" }
+}

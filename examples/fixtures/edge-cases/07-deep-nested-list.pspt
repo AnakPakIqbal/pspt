@@ -1,12 +1,11 @@
-doc "Deep Nested List" type=docx
+doc "Deep Nested List" type=projectBrief
 
-section technical {
-  list measures {
+section brief {
+  list objectives {
     item "Level 1" {
       item "Level 2" {
-        item "Level 3 (parser only documents one nesting level in codegen)"
+        item "Level 3"
       }
     }
   }
-  notes: "Testing whether codegen only flattens one level deep, per itemsToJs."
 }

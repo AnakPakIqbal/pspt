@@ -1,4 +1,4 @@
-doc "Unterminated List" type=docx
+doc "Unterminated List" type=projectBrief
 
 section technical {
   list measures {

@@ -1,5 +1,5 @@
-doc "Whitespace Only String Value" type=docx
+doc "Whitespace Only String Value" type=projectBrief
 
 section overview {
-  executiveSummary: "   "
+  overview: "   "
 }

@@ -1,8 +1,8 @@
 {
   "name": "pspt-docx",
-  "version": "1.0.0",
-  "description": "ProductSpecSDK ported to use pspt-core: generates Word (.docx) product specification documents.",
-  "main": "src/product-spec-sdk.js",
+  "version": "2.0.0",
+  "description": "Product Documentation Master SDK suite: generates the PIC Matrix front matter and all 14 Parts as Word (.docx), individually or assembled into one master document.",
+  "main": "src/index.js",
   "files": [
     "src"
   ],
@@ -10,7 +10,12 @@
     "pspt",
     "docx",
     "word",
-    "product-spec"
+    "product-documentation",
+    "brd",
+    "prd",
+    "srs",
+    "uat",
+    "specification"
   ],
   "license": "MIT",
   "repository": {
@@ -22,7 +27,6 @@
     "access": "public"
   },
   "dependencies": {
-    "docx": "^9.7.1",
-    "pspt-core": "^1.0.0"
+    "docx": "^9.7.1"
   }
 }

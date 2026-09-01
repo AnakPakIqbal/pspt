@@ -1,7 +1,0 @@
-doc "Security List Without Notes Field" type=docx
-
-section technical {
-  list measures {
-    item "Just one item, no children"
-  }
-}

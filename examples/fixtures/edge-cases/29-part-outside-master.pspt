@@ -1,0 +1,5 @@
+doc "Part Block In A Single-Part File" type=projectBrief
+
+part brd {
+  purpose: "'part' blocks only mean something in a type=master file"
+}

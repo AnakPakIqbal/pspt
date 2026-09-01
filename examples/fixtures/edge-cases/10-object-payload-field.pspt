@@ -1,5 +1,5 @@
-doc "Object Payload Field" type=docx
+doc "Object Payload Field" type=projectBrief
 
-section overview {
-  cover: "just a string, but setCoverPage expects an object shape"
+section brief {
+  metadata: "just a string, but setMetadata expects an object shape"
 }

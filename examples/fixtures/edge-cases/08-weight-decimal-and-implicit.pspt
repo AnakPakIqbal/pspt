@@ -1,12 +1,12 @@
-doc "Weight Variants" type=docx
+doc "Weight Variants" type=projectBrief
 
 section business {
-  table features {
-    name: "Feature Name"
-    description: "Description" w2.5
-    priority: "Priority" w0.5
+  table keyModules {
+    module: "Module"
+    features: "Core Features" w2.5
+    notes: "Notes" w0.5
   }
-  rows features [
-    { name: "A", description: "desc", priority: "Must" }
+  rows keyModules [
+    { module: "A", features: "desc", notes: "n" }
   ]
 }

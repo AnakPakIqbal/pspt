@@ -1,4 +1,4 @@
-doc "Missing Colon" type=docx
+doc "Missing Colon" type=projectBrief
 
 section overview {
   executiveSummary "forgot the colon"

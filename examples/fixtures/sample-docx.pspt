@@ -1,52 +1,111 @@
-doc "Sample Product Spec" type=docx
+// Sample .pspt authoring the whole Product Documentation Master in one file.
+// Every Part you leave out still renders — as its own blank template — so this
+// compiles to a complete document even though it only fills in four Parts.
+//
+// To author a single Part in its own file instead, use that Part's key as the
+// doc type (e.g. `doc "Project Brief" type=projectBrief`) and drop the
+// `part <key> { ... }` wrappers.
 
-hardware: true
+doc "Sample Widget — Product Documentation" type=master
 
-section overview {
-  executiveSummary: "Sample Widget is a demo product used to exercise the pspt DSL end-to-end."
-
-  table productRoadmap {
-    phase:     "Phase"     w1
-    theme:     "Theme"     w2
-    timeframe: "Timeframe" w1
-    status:    "Status"    w1
+part picMatrix {
+  object coverInfo {
+    productName: "Sample Widget",
+    productType: "SaaS",
+    status: "In Development",
+    writer: "Jane Doe",
+    lastUpdated: "Sept 1, 2026"
   }
-  rows productRoadmap [
-    { phase: "v1.0", theme: "Initial launch", timeframe: "Q3 2026", status: "In progress" }
+}
+
+part projectBrief {
+  object headerFooterLabels { productNameLabel: "Sample Widget" }
+  object metadata { writer: "Jane Doe", status: "Draft", version: "V1 (Phase 1)", lastUpdate: "Sept 1, 2026" }
+
+  overview: "Sample Widget is a demo product used to exercise the pspt DSL end-to-end."
+
+  list backgroundPains {
+    item "Teams track work in spreadsheets that nobody keeps current"
+    item "No single place to see what shipped and when"
+  }
+
+  list objectives {
+    item "Cut status-reporting effort by half"
+    item "Give every stakeholder one current view of scope"
+  }
+
+  table keyModules {
+    module:   "Module"        w1
+    features: "Core Features" w2.5
+  }
+  rows keyModules [
+    { module: "Tracker",   features: "Task board with per-phase rollup" },
+    { module: "Reporting", features: "Weekly digest generated from tracker state" }
+  ]
+
+  table timeline {
+    phase:    "Phase"    w2
+    duration: "Duration" w1
+  }
+  rows timeline [
+    { phase: "Phase 1 — Discovery & Design", duration: "2 weeks" },
+    { phase: "Phase 2 — MVP",                duration: "4 weeks" }
+  ]
+
+  list deliverables {
+    item "Web application"
+    item "Technical documentation (this document)"
+  }
+
+  table preliminaryRisks {
+    risk:       "Risk"       w1.2
+    mitigation: "Mitigation" w1.2
+  }
+  rows preliminaryRisks [
+    { risk: "Scope creep during discovery", mitigation: "Freeze the module list before Phase 2" }
   ]
 }
 
-section business {
-  table features {
-    name:        "Feature Name" w1
-    description: "Description"  w2
-    priority:    "Priority"     w1
+part brd {
+  object headerFooterLabels { productNameLabel: "Sample Widget" }
+
+  purpose: "Defines the business requirements Sample Widget has to satisfy before build starts."
+
+  list businessObjectives {
+    item "Halve the time spent assembling weekly status"
   }
-  rows features [
-    { name: "Auth", description: "OAuth2 login", priority: "Must" },
-    { name: "Dashboard", description: "Usage overview", priority: "Should" }
+
+  table businessRequirements {
+    id:          "ID"          w0.6
+    requirement: "Requirement" w2.4
+    objective:   "Objective"   w1.2
+    priority:    "Priority"    w0.8
+  }
+  rows businessRequirements [
+    { id: "BR-001", requirement: "The system shall record task state changes with a timestamp", objective: "Halve status effort", priority: "Must" },
+    { id: "BR-002", requirement: "The system shall generate a weekly digest without manual input", objective: "Halve status effort", priority: "Should" }
+  ]
+
+  table useCaseList {
+    id:          "ID"          w0.6
+    name:        "Use Case"    w1.4
+    actor:       "Actor"       w1
+    description: "Description" w2
+  }
+  rows useCaseList [
+    { id: "UC-01", name: "Update task state", actor: "Team member", description: "Moves a task between columns on the board" }
   ]
 }
 
-section technical {
-  authentication: "OAuth2 with JWT access tokens; optional TOTP MFA."
+part glossary {
+  object headerFooterLabels { productNameLabel: "Sample Widget" }
 
-  list measures {
-    item "Cloudflare" {
-      item "WAF"
-      item "Turnstile"
-    }
-    item "Cloud Armor" {
-      item "Rate limiting"
-    }
+  table terms {
+    term:       "Term"       w1
+    definition: "Definition" w3
   }
-  notes: "Data encrypted at rest and in transit; secrets stored in a managed vault."
-}
-
-section hardwareSpec {
-  hardwareOverview: "A pocket-sized BLE sensor puck used only in the demo fixture."
-}
-
-section qa {
-  testStrategy: "Automated unit + integration tests in CI; manual exploratory testing before release."
+  rows terms [
+    { term: "Digest",  definition: "The generated weekly summary of tracker activity" },
+    { term: "Rollup",  definition: "Aggregated per-phase completion derived from task state" }
+  ]
 }

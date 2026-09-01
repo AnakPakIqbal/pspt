@@ -1,4 +1,4 @@
-doc "Hardware Not Bool" type=docx
+doc "Hardware Not Bool" type=projectBrief
 hardware: "yes"
 
 section overview {

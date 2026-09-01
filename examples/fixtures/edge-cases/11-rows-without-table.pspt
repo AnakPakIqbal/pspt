@@ -1,7 +1,7 @@
-doc "Rows Without Matching Table" type=docx
+doc "Rows Without Matching Table" type=projectBrief
 
 section business {
-  rows features [
-    { name: "Orphan Row", description: "no table decl for this name in this section", priority: "Must" }
+  rows keyModules [
+    { module: "Orphan Row", features: "no table decl for this name in this Part" }
   ]
 }
