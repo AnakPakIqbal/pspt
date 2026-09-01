@@ -3,7 +3,7 @@
 // commit counts and diff stats. Re-run the script rather than editing.
 
 doc "Project Tracker API — Delivery Tracker" type=xlsx
-calendar 2026-06-11 .. 2026-08-06
+calendar 2026-06-11 .. 2026-09-01
 
 group "June 2026: Invitations, Permissions, Platform Foundations, Projects" color=blue rowColor=green {
   task "Invitations — Implement invitation service and rename project to project-tracker-api" start=2026-06-11 end=2026-06-11 commitCount=1 lines="+4 / -10" detail="Implement invitation service and rename project to project-tracker-api" notes={ text: "0256b8a", hyperlink: "https://github.com/AnakPakIqbal/project-tracker-api/commit/0256b8a" }
@@ -113,4 +113,8 @@ group "August 2026: Agent Documentation, Data Model, MCP Server, Platform" color
   task "MCP Server — Refactor middleware and route mounting for improved structure and clarity" start=2026-08-02 end=2026-08-02 commitCount=2 lines="+161 / -167" detail="Refactor middleware and route mounting for improved structure and clarity; Update express imports for consistency and clarity" notes={ text: "bd1f8df", hyperlink: "https://github.com/AnakPakIqbal/project-tracker-api/commit/bd1f8df" }
   task "Platform — Add CORS_ORIGIN environment variable to CI configuration" start=2026-08-02 end=2026-08-02 commitCount=2 lines="+2 / -0" detail="Add CORS_ORIGIN environment variable to CI configuration; Copy llms directory to dist during build process" notes={ text: "4c84542", hyperlink: "https://github.com/AnakPakIqbal/project-tracker-api/commit/4c84542" }
   task "Platform Foundations — Add URL support for attachments and enhance validation" start=2026-08-06 end=2026-08-06 commitCount=1 lines="+1137 / -605" detail="Add URL support for attachments and enhance validation" notes={ text: "14603bf", hyperlink: "https://github.com/AnakPakIqbal/project-tracker-api/commit/14603bf" }
+}
+
+group "September 2026: Agent Documentation" color=yellow rowColor=green {
+  task "Agent Documentation — Update the agent-facing docs for the pspt 2.0 docx suite" start=2026-09-01 end=2026-09-01 commitCount=1 lines="+920 / -583" detail="Update the agent-facing docs for the pspt 2.0 docx suite" notes={ text: "e32666c", hyperlink: "https://github.com/AnakPakIqbal/project-tracker-api/commit/e32666c" }
 }

@@ -107,6 +107,13 @@ const AREA_LABELS = {
   shared: 'Shared Foundations',
   container: 'Shared Foundations',
   app: 'Application Shell',
+  scripts: 'Build Tooling',
+  examples: 'Examples & Fixtures',
+  'pspt-core': 'Core (tokens & helpers)',
+  'pspt-docx': 'Docx SDK',
+  'pspt-xlsx': 'Xlsx SDK',
+  'pspt-lang': 'DSL Compiler',
+  'pspt-cli': 'CLI',
   pages: 'Application Shell',
 };
 
@@ -122,7 +129,14 @@ function areaOf(commit) {
       bump(feature, 3); // a feature folder is the strongest signal
       continue;
     }
+    if (parts[0] === 'packages' && parts[1] && !parts[1].includes('.')) {
+      bump(parts[1], 3);
+      continue;
+    }
     if (parts[0] === 'prisma' || parts[0] === 'db') bump('prisma', 2);
+    else if (parts[0] === 'scripts') bump('scripts', 2);
+    else if (parts[0] === 'llms') bump('llms', 2);
+    else if (parts[0] === 'examples') bump('examples', 1);
     else if (parts[0] === 'tests' || parts[0] === 'e2e') bump('tests', 1);
     else if (parts[0] === 'docs') bump('docs', 1);
     else if (parts[0] === 'docker' || /^Dockerfile|docker-compose/.test(parts[0]))
