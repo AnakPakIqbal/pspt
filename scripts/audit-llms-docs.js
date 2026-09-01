@@ -23,10 +23,9 @@
 
 const fs = require('fs');
 const path = require('path');
-
+const docxPkg = require('pspt-docx');
 const { compile } = require('pspt-lang');
 const { DOC_TYPES, PART_TYPES, setterRegistry } = require('pspt-lang/src/parts');
-const docxPkg = require('pspt-docx');
 const ExcelTrackerSDK = require('pspt-xlsx');
 
 const DIR = path.join(__dirname, '..', 'llms');

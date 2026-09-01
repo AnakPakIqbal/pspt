@@ -26,10 +26,10 @@ Two independent outputs, two independent data-gathering rules:
    be meaningfully merged across repos, so a frontend repo and a backend repo
    each get their own tracker. Content comes from **real git history**,
    scanned oldest → newest, with real diff stats per commit — never inferred
-   from commit message text. Commits touching the same feature on the same
-   day are **merged into one task row** (summed `commitCount=`/`lines=`, one
-   link to the most critical commit in `notes=`) — always a single-day row,
-   listed oldest → newest, never spanning a date range.
+   from commit message text. Commits are grouped **by feature, never by
+   calendar month**, and each row covers one continuous run of work on that
+   feature (summed `commitCount=`/`lines=`, one link to the most critical
+   commit in `notes=`), listed oldest → newest.
 
 ## Step 0 — ask the user which folders make up the product
 
@@ -289,40 +289,47 @@ Parse `git show --shortstat`'s `N insertion(s)`/`N deletion(s)` text for the
 real `+`/`-` counts — this is exactly what `pspt-core`'s `getCommitDiffStat`
 does internally (see [core.md](./core.md#git-scan-utilities-most-likely-to-be-used-directly)).
 
-### Turning commits into task fields: merge related commits into one row per day
+### Turning commits into task fields: group by feature, one row per run of work
 
-Read every commit's diff (not just its subject line — a commit titled "fix
-bug" may touch the feature you're tracking, and a commit titled "feat: X" may
-only be a stub) and **merge commits that touch the same feature/area on the
-same day into a single `task` row** — don't give a real business feature ten
-noisy rows just because it took ten commits to build. A task's `start=` and
-`end=` are the same date (the merged group's day), so every row is still a
-single-day block on the Gantt — just don't create one row per raw commit,
-and never span a single row across multiple days.
+Read every commit’s diff — not just its subject line. A commit titled "fix
+bug" may touch the feature you are tracking, and a commit titled "feat: X" may
+only be a stub. Which feature a commit belongs to is decided by **where its
+lines landed**, weighting source over documentation, tests and lockfiles: a
+commit that adds 2,000 lines of OpenAPI alongside 300 lines of feature code is
+the feature, not the documentation.
 
-**List commits oldest → newest.** Both within a `group` and across the whole
-tracker, order tasks by date ascending — reuse the same oldest-first ordering
-from `pspt scan-git`'s reversed output (or Option B's `--reverse`) you
-already have from above; don't leave rows in git's native newest-first order.
+**Group by feature, never by calendar month.** Each `group` is one feature or
+area of the product — "Tasks", "Authentication", "Data Model" — so a reader
+scanning the sheet sees everything that happened to Tasks in one block. A
+tracker grouped into "June 2026", "July 2026" answers a question nobody asks.
+Order the groups by how much work landed in each, biggest first.
 
-Group rows under a `group "<Section Title>"` that reflects what the merged
-commits actually touched, and name each task in **plain business language**
-describing what shipped, not the raw commit subject — "Auth Middleware &
-Invitation Service" reads better than "feat: implement JWT middleware +
-invite-by-email flow". Save the technical detail for the "FEATURE DETAIL"
-`detail=` field if useful.
+**One row per continuous run of work on a feature, not one row per commit or
+per day.** A row is a task; the commits inside it are its subtasks. A feature
+built across four days is one piece of work, not four rows — splitting it by
+calendar day is what makes a tracker read as noise. Let a run absorb a weekend
+gap (roughly three quiet days) before starting a new row; a genuine pause in
+the work starts the next one. `start=` is the run’s first commit date and
+`end=` its last, so the Gantt bar shows the real shape of the work.
 
-**Vary the banner `color=` per group, but keep every row the same
-`rowColor=` throughout the whole tracker.** Each `group`'s banner (the title
-bar, e.g. "June 2026 Backend Core Architecture & AI Service Releases") gets
-its own distinct `color=` so sections read as visually separate blocks when
-scanning down the sheet — but the individual `task` rows underneath every
-group use one single, consistent `rowColor=` (e.g. `rowColor=green` on
-every group, for a uniform pale row background) regardless of which group
-they belong to. Don't do the opposite (same banner color everywhere, rows
-recolored per group) and don't let banner colors repeat back-to-back between
-adjacent groups — pick a different one for each so the section boundaries
-stay visually obvious.
+**Name the row for what shipped, and let `detail=` summarise the subtasks.**
+The name is plain business language — "Auth Middleware & Invitation Service",
+never the raw commit subject "feat: implement JWT middleware + invite-by-email
+flow". Strip the conventional-commit prefix and the leading verb, and keep the
+noun phrase. `detail=` then lists what each merged commit contributed, largest
+first, which is the row’s summary of its own subtasks.
+
+**List rows oldest → newest** within each group, and order the whole sheet by
+the date work started — reuse the oldest-first ordering from `pspt scan-git`’s
+reversed output (or `git log --reverse`); never leave rows in git’s native
+newest-first order.
+
+**Vary the banner `color=` per group, but keep every row the same `rowColor=`**
+throughout the whole tracker. Each group’s banner (e.g. "Tasks (13 commits)")
+gets its own distinct colour so features read as visually separate blocks,
+while the task rows underneath every group share one consistent background
+(e.g. `rowColor=green`). Do not do the opposite, and do not let banner colours
+repeat back-to-back between adjacent groups.
 
 For a merged row's `commitCount=`/`lines=`, **sum across every commit in the
 group** — `pspt scan-git --with-lines`'s output (Option A above) gives you
@@ -390,10 +397,10 @@ rm docs/pspt/trackers/frontend.gen.js
 
 ## Summary of the rule
 
-| Output          | Scope                                                                                                                       | Authored as                           | Content source                                                                     | Never                                                                                                                                                                                                                                                                                                                       |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.docx` spec    | Whole product (all repos combined), every available section from [docx-sdk.md](./docx-sdk.md), written in business language | `docs/pspt/documentation.pspt`        | Real source code from every repo in scope (routes, schema, deps, config, tests)    | Copying from READMEs/docs without verifying against code, skipping sections instead of stating "not found", paraphrasing a DSL-unreachable setter's content into an unrelated field, hand-written JS setter calls outside the narrow sanctioned exception, or leaving `documentation.gen.js` behind after the WARNING check |
-| `.xlsx` tracker | One per repo, one `task` row per same-day/same-feature commit group, oldest → newest                                        | `docs/pspt/trackers/<repo-name>.pspt` | That repo's real `git diff`/`git show --shortstat` output, summed per merged group | Merging git history across repos, spanning one row across multiple days, more than one commit link in `notes=`, inferring line counts or scope from commit message text, hand-written JS setter calls, or leaving `<repo-name>.gen.js` behind after the WARNING check                                                       |
+| Output          | Scope                                                                                                                       | Authored as                           | Content source                                                                  | Never                                                                                                                                                                                                                                                                                                                       |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.docx` spec    | Whole product (all repos combined), every available section from [docx-sdk.md](./docx-sdk.md), written in business language | `docs/pspt/documentation.pspt`        | Real source code from every repo in scope (routes, schema, deps, config, tests) | Copying from READMEs/docs without verifying against code, skipping sections instead of stating "not found", paraphrasing a DSL-unreachable setter's content into an unrelated field, hand-written JS setter calls outside the narrow sanctioned exception, or leaving `documentation.gen.js` behind after the WARNING check |
+| `.xlsx` tracker | One per repo, one `group` per feature, one `task` row per continuous run of work on it, oldest → newest                     | `docs/pspt/trackers/<repo-name>.pspt` | That repo's real per-file `git log --numstat` output, summed per merged run     | Merging git history across repos, grouping by calendar month instead of by feature, one row per raw commit, more than one commit link in `notes=`, inferring line counts or scope from commit message text, hand-written JS setter calls, or leaving `<repo-name>.gen.js` behind after the WARNING check                    |
 
 Both are always run through `pspt-cli` (`pspt compile` / `pspt build`) — never
 executed by hand-writing JS against `pspt-docx`/`pspt-xlsx` directly, except
@@ -402,10 +409,10 @@ DSL can't express" above), which is the only sanctioned exception. `docs/pspt/`
 itself always lives at the workspace root (Step 0), never inside one of the
 individual repos.
 
-For the tracker specifically: vary `color=` per group (each section's banner
-gets its own color) while keeping `rowColor=` the same across every group in
-the tracker (uniform row background); merge same-day/same-feature commits
-into one row with summed `commitCount=`/`lines=`; put only the single
-most-critical commit's real
-`<remote-url>/commit/<hash>` link in that row's `notes=` as a plain string;
-and list every row oldest → newest.
+For the tracker specifically: one `group` per feature, ordered by how much
+work landed in each; one row per continuous run of work on that feature, named
+for what shipped with `detail=` summarising the commits under it; vary
+`color=` per group while keeping `rowColor=` the same across the whole
+tracker; put only the single most-critical commit's real
+`<remote-url>/commit/<hash>` link in that row's `notes=`; and list every row
+oldest → newest.

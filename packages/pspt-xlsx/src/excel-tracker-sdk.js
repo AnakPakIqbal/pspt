@@ -422,7 +422,7 @@ class ExcelTrackerSDK {
       cell.font = {
         name: 'Arial',
         size: 9,
-        color: { argb: 'FF0563C1' },
+        color: { argb: this.colors.hyperlink || this.colors.darkText },
         underline: true,
       };
     } else {

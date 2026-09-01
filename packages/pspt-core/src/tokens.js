@@ -64,7 +64,8 @@ const XLSX_COLORS = {
   blueGantt: 'FF4A90E2', // Gantt timeline bar (Blue)
   gridBorder: 'FF595959', // Soft black grid border
   white: 'FFFFFFFF',
-  darkText: 'FF333333',
+  darkText: 'FF000000',
+  hyperlink: 'FF000000', // links stay black; the underline still marks them as links
 };
 
 // Color presets for section rows

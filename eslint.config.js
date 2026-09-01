@@ -124,6 +124,12 @@ module.exports = [
     rules: {
       'security/detect-non-literal-fs-filename': 'off',
       'n/no-process-exit': 'off',
+      // build-tracker.js shells out to `git` by name, exactly as
+      // pspt-core/git-scan.js does, and its weights/thresholds are the content
+      // rather than incidental values. Sort comparators are (a, b) by convention.
+      'sonarjs/no-os-command-from-path': 'off',
+      'no-magic-numbers': 'off',
+      'id-length': 'off',
       // The doc generator is a linear string builder: its 'complexity' is a long
       // sequence of lines.push() calls, not branching logic, so splitting it
       // further would scatter one document across several functions for no gain.

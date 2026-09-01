@@ -23,9 +23,9 @@
  * =============================================================================
  */
 
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
 
 const [repoPath, outPath, title] = process.argv.slice(2);
 if (!repoPath || !outPath) {
@@ -136,11 +136,11 @@ const AREA_LABELS = {
 
 /** How much a file's churn counts toward deciding a commit's area. */
 function incidence(filePath) {
-  if (/(^|[/])(package-lock[.]json|bun[.]lockb|yarn[.]lock)$/.test(filePath)) return 0.02;
-  if (/(^|[/])(docs|llms)[/]/.test(filePath) || /[.](md|ya?ml)$/.test(filePath)) return 0.15;
+  if (/(?:^|\/)(?:package-lock\.json|bun\.lockb|yarn\.lock)$/.test(filePath)) return 0.02;
+  if (/(?:^|\/)(?:docs|llms)\//.test(filePath) || /\.(md|ya?ml)$/.test(filePath)) return 0.15;
   if (
-    /(^|[/])(tests?|e2e|__tests__|fixtures)[/]/.test(filePath) ||
-    /[.](spec|test)[.]/.test(filePath)
+    /(?:^|\/)(?:tests?|e2e|__tests__|fixtures)\//.test(filePath) ||
+    /\.(spec|test)\./.test(filePath)
   )
     return 0.3;
   return 1;
@@ -170,7 +170,7 @@ function areaOf(commit) {
     else if (parts[0] === 'examples') bump('examples', weight);
     else if (parts[0] === 'tests' || parts[0] === 'e2e') bump('tests', weight);
     else if (parts[0] === 'docs') bump('docs', weight);
-    else if (parts[0] === 'docker' || /^Dockerfile|docker-compose/.test(parts[0]))
+    else if (parts[0] === 'docker' || /^(?:Dockerfile|docker-compose)/.test(parts[0]))
       bump('docker', weight);
     else if (parts[1] === 'shared' || parts[0] === 'shared') bump('shared', weight);
     else if (parts[1] === 'pages' || parts[1] === 'app') bump('pages', weight);
@@ -208,26 +208,72 @@ function label(key) {
  * prefix, drop the leading verb, and keep the noun phrase up to the first
  * clause boundary.
  */
-const LEADING_VERBS =
-  /^(implement|implemented|add|added|adds|create|created|introduce|introduced|refactor|refactored|update|updated|improve|improved|enhance|enhanced|integrate|integrated|overhaul|overhauled|scaffold|scaffolded|fix|fixed|resolve|resolved|remove|removed|rename|renamed|reorganize|reorganized|extend|extended|transition to|migrate to|migrated to|support|complete|finalize)\s+/i;
+const LEADING_VERBS = new Set([
+  'implement',
+  'add',
+  'create',
+  'introduce',
+  'refactor',
+  'update',
+  'improve',
+  'enhance',
+  'integrate',
+  'overhaul',
+  'scaffold',
+  'fix',
+  'resolve',
+  'remove',
+  'rename',
+  'reorganize',
+  'extend',
+  'support',
+  'complete',
+  'finalize',
+  'migrate',
+  'transition',
+]);
 
-const CLAUSE_BOUNDARY =
-  /(?:\s+(?:with|using|including|and add|and update|and improve|and extend|for the|to the)\s+|\s*[,;—]\s+)/i;
+/** Clause openers that mark where a subject stops naming the thing shipped. */
+const CLAUSE_OPENERS = new Set(['with', 'using', 'including', 'for', 'to', 'and']);
+
+/** Drops a leading verb (in any common inflection) from a subject. */
+function stripLeadingVerb(text) {
+  const [first, ...rest] = text.split(' ');
+  if (!first) return text;
+  const stem = first.toLowerCase().replace(/(?:ed|es|s|d)$/, '');
+  if (!LEADING_VERBS.has(stem) && !LEADING_VERBS.has(first.toLowerCase())) return text;
+  // "migrate to" / "transition to" carry their preposition with them.
+  if (rest[0] === 'to' && (stem === 'migrate' || stem === 'transition'))
+    return rest.slice(1).join(' ');
+  return rest.join(' ');
+}
+
+/** Index of the first clause opener, or -1 — where the noun phrase ends. */
+function clauseStart(words) {
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i].toLowerCase();
+    if (CLAUSE_OPENERS.has(word)) return i;
+    if (/[,;—]$/.test(words[i - 1])) return i;
+  }
+  return -1;
+}
 
 function phrase(subject) {
   let text = subject
-    .replace(/^[a-z]+(\([^)]*\))?!?:\s*/i, '')
+    .replace(/^[a-z]{2,12}(?:\([a-z0-9,/ -]{1,40}\))?!?: /i, '')
     .replace(/\s+/g, ' ')
     .trim();
-  text = text.replace(LEADING_VERBS, '');
+  text = stripLeadingVerb(text);
 
-  const boundary = CLAUSE_BOUNDARY.exec(text);
-  if (boundary && boundary.index > MIN_PHRASE_LENGTH) text = text.slice(0, boundary.index);
-  text = text.replace(/[.,;:]+$/, '').trim();
+  const words = text.split(' ').filter(Boolean);
+  const boundary = clauseStart(words);
+  const kept = boundary > 0 ? words.slice(0, boundary) : words;
+  text = kept
+    .slice(0, MAX_PHRASE_WORDS)
+    .join(' ')
+    .replace(/[.,;:]{1,4}$/, '')
+    .trim();
   if (!text) return '';
-
-  const words = text.split(' ');
-  if (words.length > MAX_PHRASE_WORDS) text = words.slice(0, MAX_PHRASE_WORDS).join(' ');
 
   // Title-case, leaving acronyms and already-capitalised words alone.
   return text
@@ -246,119 +292,142 @@ function bestLabel(labels, fallback) {
   return ranked.length ? ranked[0][0] : fallback;
 }
 
-/** Merge same-day, same-area commits into one row. */
-function toRows(commits) {
-  const groups = new Map();
+/** Distinct phrases, longest first, so a summary leads with the biggest thing. */
+function summarise(commits) {
+  const seen = new Map();
   for (const commit of commits) {
-    const area = areaOf(commit);
-    const key = `${commit.date}|${area.key}`;
-    if (!groups.has(key)) {
-      groups.set(key, { date: commit.date, area: area.key, labels: new Map(), commits: [] });
-    }
-    const bucket = groups.get(key);
-    // The row is labelled for whichever spelling covers the most work.
-    bucket.labels.set(area.label, (bucket.labels.get(area.label) || 0) + commit.churn);
-    bucket.commits.push(commit);
+    const text = phrase(commit.subject);
+    if (!text) continue;
+    seen.set(text, Math.max(seen.get(text) || 0, commit.churn));
   }
-
-  return [...groups.values()]
-    .sort((a, b) => a.date.localeCompare(b.date) || a.area.localeCompare(b.area))
-    .map((group) => {
-      const insertions = group.commits.reduce((sum, item) => sum + item.insertions, 0);
-      const deletions = group.commits.reduce((sum, item) => sum + item.deletions, 0);
-      // "Most critical" = the largest single commit by total lines changed.
-      const lead = group.commits.reduce(
-        (best, item) => (item.churn > best.churn ? item : best),
-        group.commits[0],
-      );
-      return {
-        date: group.date,
-        area: group.area,
-        name: `${bestLabel(group.labels, group.area)} — ${phrase(lead.subject)}`,
-        detail: group.commits.map((item) => phrase(item.subject)).join('; '),
-        churn: insertions + deletions,
-        commitCount: group.commits.length,
-        lines: `+${insertions} / -${deletions}`,
-        leadHash: lead.hash,
-      };
-    });
+  return [...seen.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([text]) => text)
+    .join('; ');
 }
 
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Merges commits into one row per continuous run of work on a feature.
+ *
+ * A row is a task, and the commits under it are its subtasks — so the row is
+ * named for the feature and its detail summarises what those commits did.
+ * Splitting the same feature into one row per calendar day is what made the
+ * sheet read as noise: a feature built over four days is one piece of work,
+ * not four. Consecutive days (and a weekend gap) stay in the same run; a real
+ * pause starts a new one.
+ */
+function toRows(commits) {
+  const byArea = new Map();
+  for (const commit of commits) {
+    const area = areaOf(commit);
+    if (!byArea.has(area.key)) byArea.set(area.key, []);
+    byArea.get(area.key).push({ ...commit, label: area.label });
+  }
+
+  const rows = [];
+  for (const [area, areaCommits] of byArea) {
+    areaCommits.sort((a, b) => a.date.localeCompare(b.date));
+
+    let run = [];
+    const flush = () => {
+      if (!run.length) return;
+      rows.push(makeRow(area, run));
+      run = [];
+    };
+    for (const commit of areaCommits) {
+      if (run.length) {
+        const gap = (Date.parse(commit.date) - Date.parse(run[run.length - 1].date)) / DAY_MS;
+        if (gap > RUN_GAP_DAYS) flush();
+      }
+      run.push(commit);
+    }
+    flush();
+  }
+
+  return rows.sort((a, b) => a.start.localeCompare(b.start) || a.area.localeCompare(b.area));
+}
+
+function makeRow(area, run) {
+  const insertions = run.reduce((sum, item) => sum + item.insertions, 0);
+  const deletions = run.reduce((sum, item) => sum + item.deletions, 0);
+  // "Most critical" = the largest single commit by total lines changed.
+  const lead = run.reduce((best, item) => (item.churn > best.churn ? item : best), run[0]);
+
+  const labels = new Map();
+  for (const commit of run)
+    labels.set(commit.label, (labels.get(commit.label) || 0) + commit.churn);
+
+  return {
+    area,
+    start: run[0].date,
+    end: run[run.length - 1].date,
+    churn: insertions + deletions,
+    name: `${bestLabel(labels, area)} — ${phrase(lead.subject)}`,
+    detail: summarise(run),
+    commitCount: run.length,
+    lines: `+${insertions} / -${deletions}`,
+    leadHash: lead.hash,
+  };
+}
+
 // Distinct banner per group; never the same colour twice in a row.
 const BANNERS = ['blue', 'green', 'purple', 'yellow', 'pink', 'gray'];
 const ROW_COLOR = 'green'; // uniform across the whole tracker, per the workflow
 // A commit whose largest area holds less than this share of its changed lines
 // has no real home; only then does it fall into the catch-all bucket.
 const DOMINANCE_THRESHOLD = 0.45;
-const MIN_PHRASE_LENGTH = 12; // do not truncate a phrase down to nothing
 const MAX_PHRASE_WORDS = 7;
-const MONTH_KEY_LENGTH = 'YYYY-MM'.length;
-const MAX_AREAS_IN_BANNER = 3;
+// Days of quiet that end a run of work on a feature. Three keeps a Friday
+// and the following Monday together.
+const RUN_GAP_DAYS = 3;
 
 function esc(text) {
   return String(text).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
 function render(rows, remote, trackerTitle) {
-  const byMonth = new Map();
+  // Group by feature, not by calendar month: a reader scanning the sheet wants
+  // "everything that happened to Tasks", not "everything that happened in June".
+  const byArea = new Map();
   for (const row of rows) {
-    const key = row.date.slice(0, MONTH_KEY_LENGTH);
-    if (!byMonth.has(key)) byMonth.set(key, []);
-    byMonth.get(key).push(row);
+    if (!byArea.has(row.area)) byArea.set(row.area, []);
+    byArea.get(row.area).push(row);
   }
 
-  const dates = rows.map((r) => r.date).sort();
+  const dates = rows.flatMap((row) => [row.start, row.end]).sort();
   const out = [];
   out.push('// Generated by scripts/build-tracker.js from real git history.');
-  out.push('// Rows are merged per day and per area, oldest first, with summed');
-  out.push('// commit counts and diff stats. Re-run the script rather than editing.');
+  out.push('// One group per feature; one row per continuous run of work on it,');
+  out.push('// summing its commits. Re-run the script rather than editing.');
   out.push('');
   out.push(`doc "${esc(trackerTitle)}" type=xlsx`);
   out.push(`calendar ${dates[0]} .. ${dates[dates.length - 1]}`);
   out.push('');
 
+  // Biggest feature first, so the sheet opens on the substance.
+  const ordered = [...byArea.entries()].sort(
+    (a, b) =>
+      b[1].reduce((sum, row) => sum + row.churn, 0) - a[1].reduce((sum, row) => sum + row.churn, 0),
+  );
+
   let banner = 0;
-  for (const [month, monthRows] of [...byMonth].sort()) {
-    const [year, m] = month.split('-');
+  for (const [area, areaRows] of ordered) {
     const color = BANNERS[banner % BANNERS.length];
     banner++;
-    // Rank the month's areas by the work that landed in them, so the banner
-    // names the themes of the month rather than whatever sorts first.
-    const churnByArea = new Map();
-    for (const row of monthRows) {
-      for (const area of row.area.split(' & ')) {
-        churnByArea.set(area, (churnByArea.get(area) || 0) + row.churn);
-      }
-    }
-    const areas = [...churnByArea.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, MAX_AREAS_IN_BANNER)
-      .map(([area]) => area)
-      .join(', ');
+    areaRows.sort((a, b) => a.start.localeCompare(b.start));
+    const commitTotal = areaRows.reduce((sum, row) => sum + row.commitCount, 0);
     out.push(
-      `group "${MONTHS[Number(m) - 1]} ${year}: ${esc(areas)}" color=${color} rowColor=${ROW_COLOR} {`,
+      `group "${esc(area)} (${commitTotal} commits)" color=${color} rowColor=${ROW_COLOR} {`,
     );
-    for (const row of monthRows) {
+    for (const row of areaRows) {
       const link = remote ? `${remote.replace(/\.git$/, '')}/commit/${row.leadHash}` : '';
       const notes = link
         ? ` notes={ text: "${esc(row.leadHash)}", hyperlink: "${esc(link)}" }`
         : '';
       out.push(
-        `  task "${esc(row.name)}" start=${row.date} end=${row.date}` +
+        `  task "${esc(row.name)}" start=${row.start} end=${row.end}` +
           ` commitCount=${row.commitCount} lines="${row.lines}"` +
           ` detail="${esc(row.detail)}"${notes}`,
       );
@@ -385,19 +454,11 @@ fs.mkdirSync(path.dirname(outPath), { recursive: true });
 const source = render(rows, remote, title || `${name} Tracker`);
 fs.writeFileSync(outPath, source);
 
-// Rows are single-day by construction, but assert it against what was
-// actually written rather than trusting the constructor: a tracker that
-// quietly breaks the rule is worse than one that fails to build.
-const spans = [...source.matchAll(/ start=(\S+) end=(\S+)/g)].filter(([, from, to]) => from !== to);
+const areas = new Set(rows.map((row) => row.area));
+const spanning = rows.filter((row) => row.start !== row.end).length;
 console.log(
-  `${name}: ${commits.length} commits -> ${rows.length} merged rows ` +
-    `(${new Set(rows.map((row) => row.date.slice(0, MONTH_KEY_LENGTH))).size} months, ` +
-    `${new Set(rows.map((row) => row.area)).size} areas), ${spans.length} multi-day rows`,
+  `${name}: ${commits.length} commits -> ${rows.length} rows in ${areas.size} feature groups ` +
+    `(${spanning} spanning more than one day)`,
 );
-if (spans.length > 0) {
-  console.error(
-    `${spans.length} row(s) span more than one day — the tracker rule requires single-day rows.`,
-  );
-  process.exit(1);
-}
+
 console.log(`wrote ${outPath}`);
