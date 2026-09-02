@@ -4,6 +4,10 @@
 
 # pspt-docx
 
+**This reference describes pspt-docx 2.0.0.** An agent that installed
+`pspt-docx@^1` has the removed `ProductSpecSDK` instead — check with
+`require('pspt-docx/package.json').version` before relying on anything below.
+
 `pspt-docx` generates the **Product Documentation Master** — a Word (.docx) suite
 made of PIC Matrix front matter followed by 14 numbered Parts. Each Part is a
 self-contained mini-document with its own title page and running header, and

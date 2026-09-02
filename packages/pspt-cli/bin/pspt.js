@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
+const { version } = require('../package.json');
 const { buildFile } = require('../src/build');
 const { compileFile } = require('../src/compile');
 const { scanGit } = require('../src/scan-git');
@@ -27,9 +28,10 @@ function parseFlags(args) {
 }
 
 function printUsage() {
-  console.log(`pspt — compile and build .pspt product-spec / tracker files
+  console.log(`pspt v${version} — compile and build .pspt documentation / tracker files
 
 Usage:
+  pspt --version                           Print the installed version
   pspt compile <file>.pspt                 Compile to <file>.gen.js
   pspt build <file>.pspt --out <output>    Compile + run, writing <output> (.docx/.xlsx)
   pspt scan-git <repo...> --since <date> --out <data>.json [--with-lines]
@@ -40,13 +42,19 @@ Usage:
 
 Examples:
   pspt compile examples/fixtures/sample-docx.pspt
-  pspt build examples/fixtures/sample-docx.pspt --out out/spec.docx
+  pspt build examples/fixtures/sample-docx.pspt --out out/documentation.docx
   pspt scan-git ../project-tracker ../project-tracker-api --since 2026-01-01 --out scan.json --with-lines
 `);
 }
 
 async function main() {
   const [, , cmd, ...rest] = process.argv;
+
+  if (cmd === '--version' || cmd === '-v' || cmd === 'version') {
+    console.log(version);
+    return;
+  }
+
   const { positional, flags } = parseFlags(rest);
 
   try {

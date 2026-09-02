@@ -6,13 +6,23 @@ The `pspt` command-line tool: compiles/runs `.pspt` DSL files (see
 ## Install
 
 ```bash
-npm install -g pspt-cli   # exposes the `pspt` command (not `pspt-cli`)
+npm install -g pspt-cli@^2   # exposes the `pspt` command (not `pspt-cli`)
 # or, without installing:
-npx pspt-cli
-npx -p pspt-cli pspt      # if npx can't resolve the bin name directly
+npx pspt-cli@^2
+npx -p pspt-cli@^2 pspt      # if npx can't resolve the bin name directly
 ```
 
 Package name is `pspt-cli`; the binary it installs is named `pspt`.
+
+**Pin the major version.** This reference describes 2.x. Confirm what you
+actually have before relying on it:
+
+```bash
+pspt --version    # 2.x — 1.x is the removed ProductSpecSDK suite
+```
+
+`pspt --version` (or `-v`) prints the installed version and exits; the usage
+banner also carries it.
 
 ## Commands
 

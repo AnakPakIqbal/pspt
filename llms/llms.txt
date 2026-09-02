@@ -19,8 +19,30 @@ pspt is a monorepo published as five npm packages: `pspt-core` (shared design
 tokens + git-scan utilities), `pspt-docx` (the Word documentation generator
 SDK), `pspt-xlsx` (the Excel tracker generator SDK), `pspt-lang` (the `.pspt`
 DSL compiler), and `pspt-cli` (the `pspt` command-line binary tying the above
-together). Install the CLI with `npm install -g pspt-cli` or run it ad hoc with
-`npx pspt-cli`; the command it exposes is `pspt`, not `pspt-cli`.
+together). The command the CLI exposes is `pspt`, not `pspt-cli`.
+
+## Which version these docs describe
+
+**These docs describe pspt 2.x.** Install it explicitly rather than taking
+whatever npm serves by default:
+
+```bash
+npm install -g pspt-cli@^2          # or: npx pspt-cli@^2
+pspt --version                    # confirm: should print 2.x
+```
+
+**If `pspt --version` reports 1.x, you have the wrong suite for these docs.**
+pspt 1.x was a single `ProductSpecSDK` class with a hardware-section toggle and
+a `type=docx` DSL declaration; 2.x replaced it with the 15-Part Product
+Documentation Master. Code written from these docs will throw on 1.x, and code
+written for 1.x will throw on 2.x. The same applies to the SDKs directly:
+`pspt-docx@^2`, `pspt-xlsx@^2`, `pspt-lang@^2`, `pspt-core@^2`.
+
+Checking from JavaScript rather than the shell:
+
+```js
+require('pspt-docx/package.json').version; // '2.0.0'
+```
 
 ## What the docx side produces
 
@@ -69,5 +91,5 @@ know exactly which detail you need:
   boundaries and error messages). **This repo is private** — you likely
   cannot clone or browse it. The npm packages (`pspt-cli`, `pspt-core`,
   `pspt-docx`, `pspt-xlsx`, `pspt-lang`) are published publicly regardless,
-  so `npm install -g pspt-cli` / `npx pspt-cli` work without any access to
-  the repo.
+  so `npm install -g pspt-cli@^2` / `npx pspt-cli@^2` work without any access
+  to the repo.

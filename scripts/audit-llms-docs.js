@@ -26,6 +26,7 @@ const path = require('path');
 const docxPkg = require('pspt-docx');
 const { compile } = require('pspt-lang');
 const { DOC_TYPES, PART_TYPES, setterRegistry } = require('pspt-lang/src/parts');
+const { version } = require('pspt-docx/package.json');
 const ExcelTrackerSDK = require('pspt-xlsx');
 
 const DIR = path.join(__dirname, '..', 'llms');
@@ -67,6 +68,28 @@ const unguarded = dsl
   .split('\n')
   .filter((line) => !line.trimStart().startsWith('>') && /`type=docx`|`ProductSpecSDK`/.test(line));
 check(unguarded.length === 0, 'dsl.md mentions removed APIs only in deprecation notices');
+
+// --- Version guidance ------------------------------------------------------
+// An agent that installs an unpinned `pspt-cli` can land on the previous major
+// and get the API these docs say no longer exists, so the docs must name the
+// version they describe and it must be the real one.
+const major = version.split('.')[0];
+for (const name of ['llms.txt', 'cli.md', 'docx-sdk.md']) {
+  const text = read(name);
+  check(
+    new RegExp(`\\b${major}\\.(?:x|\\d)`).test(text),
+    `${name}: names the major version it describes (${major}.x)`,
+  );
+}
+check(
+  read('llms.txt').includes(`pspt-cli@^${major}`) && read('cli.md').includes(`pspt-cli@^${major}`),
+  `install commands are pinned to ^${major}`,
+);
+check(read('docx-sdk.md').includes(version), `docx-sdk.md states the exact version (${version})`);
+const unpinned = ['llms.txt', 'cli.md']
+  .flatMap((name) => read(name).split(String.fromCharCode(10)))
+  .filter((line) => /npm install -g pspt-cli(?!@)|npx pspt-cli(?!@)/.test(line));
+check(unpinned.length === 0, 'no unpinned install command remains');
 
 // --- Counts ----------------------------------------------------------------
 const totalSetters = [...PART_TYPES.values()].reduce(

@@ -20,6 +20,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { version } = require('pspt-docx/package.json');
 const { PART_TYPES, setterRegistry } = require('pspt-lang/src/parts');
 
 const OUT = path.join(__dirname, '..', 'llms', 'docx-sdk.md');
@@ -96,6 +97,10 @@ function build() {
   lines.push('     Edit scripts/generate-llms-docs.js (or the SDK) and re-run instead. -->');
   lines.push('');
   lines.push('# pspt-docx');
+  lines.push('');
+  lines.push(`**This reference describes pspt-docx ${version}.** An agent that installed`);
+  lines.push('`pspt-docx@^1` has the removed `ProductSpecSDK` instead — check with');
+  lines.push("`require('pspt-docx/package.json').version` before relying on anything below.");
   lines.push('');
   lines.push('`pspt-docx` generates the **Product Documentation Master** — a Word (.docx) suite');
   lines.push('made of PIC Matrix front matter followed by 14 numbered Parts. Each Part is a');
