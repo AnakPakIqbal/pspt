@@ -94,6 +94,35 @@ then run `npm publish --workspace packages/<pkg>` in dependency order
 before it) for just the packages that changed. `npm version patch|minor|major
 --workspace packages/<pkg>` can bump the version for you.
 
+### Publishing 2.0.0 (pending)
+
+The workspace is at 2.0.0 and npm still serves 1.0.0. Until this is published,
+`npm install -g pspt-cli@^2` — which the agent-facing docs now tell people to
+run — will 404, and an unpinned install still lands on the removed
+`ProductSpecSDK`.
+
+Everything up to the publish itself has been verified: all five tarballs pack,
+install into a clean project, and work (`MasterDocument` resolves 15 Parts, the
+DSL compiles, a .docx renders, `pspt --version` prints 2.0.0), and the internal
+dependency ranges all point at `^2.0.0`. Publish in dependency order:
+
+```bash
+npm login                                          # the registry rejects an anonymous publish
+npm publish --workspace packages/pspt-core         # no internal deps
+npm publish --workspace packages/pspt-docx
+npm publish --workspace packages/pspt-xlsx         # depends on pspt-core
+npm publish --workspace packages/pspt-lang         # depends on pspt-docx
+npm publish --workspace packages/pspt-cli          # depends on all four
+```
+
+Append `--dry-run` to any of these to rehearse it. Afterwards, swap
+project-tracker-api's local path dependency for the published range:
+
+```bash
+cd ../project-tracker-api
+npm pkg set dependencies.pspt-docx=^2.0.0 && npm install
+```
+
 **Publishing is irreversible in an important way**: npm never allows
 re-using a published package name/version, even if you unpublish it — pick
 versions you're confident in before publishing for real (dry-run first with

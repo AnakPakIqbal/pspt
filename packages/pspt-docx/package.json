@@ -4,7 +4,9 @@
   "description": "Product Documentation Master SDK suite: generates the PIC Matrix front matter and all 14 Parts as Word (.docx), individually or assembled into one master document.",
   "main": "src/index.js",
   "files": [
-    "src"
+    "src/index.js",
+    "src/sdk/",
+    "src/README.md"
   ],
   "keywords": [
     "pspt",
