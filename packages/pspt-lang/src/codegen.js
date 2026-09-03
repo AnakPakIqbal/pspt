@@ -26,6 +26,16 @@
  * A row cell may itself be a [list] or an {object}, which is what makes the
  * setters with nested payloads — an endpoint's request/response body, an
  * entity's column list, a user story's Given/When/Then bullets — reachable.
+ * That nesting is exactly where a mismatch stops being visible: matching a
+ * field/table/object *name* against a setter (above) says nothing about
+ * whether what's *inside* a row or object field is shaped the way that
+ * setter expects one level down — `setEntityDetails`' `columns` wants
+ * `{column, type, constraints, description}` objects, not bare strings, and
+ * writing it wrong compiled clean and rendered blank cells with no signal
+ * anywhere. `validateNestedValue` (below) checks a row/object field's value
+ * against the shape the SDK's own example implies, however deep, and warns
+ * — naming the exact field and the exact expected shape — without dropping
+ * the value, so the author can see and fix it rather than lose it twice.
  *
  * A construct that doesn't match, or a name with no setter behind it, becomes a
  * `// WARNING:` comment in the generated file rather than failing the compile —
@@ -131,6 +141,150 @@ function describeShape(shape) {
   return `${/^[aeiou]/i.test(shape) ? 'an' : 'a'} ${shape} payload`;
 }
 
+/** The structural kind of an authored value node — coarser than `node.kind`,
+ *  collapsing every scalar AST kind into one bucket, since a mismatch between
+ *  e.g. a string and a number is never the failure this checker cares about. */
+function astKind(node) {
+  switch (node.kind) {
+    case 'string':
+    case 'ident':
+    case 'date':
+      return 'string';
+    case 'number':
+      return 'number';
+    case 'bool':
+      return 'boolean';
+    case 'null':
+      return 'null';
+    case 'array':
+      return 'array';
+    case 'object':
+      return 'object';
+    default:
+      return 'unknown';
+  }
+}
+
+function describeKind(kind) {
+  switch (kind) {
+    case 'array':
+      return 'a list';
+    case 'object':
+      return 'an object';
+    case 'string':
+      return 'a string';
+    case 'number':
+      return 'a number';
+    case 'boolean':
+      return 'a boolean';
+    default:
+      return 'an unrecognised value';
+  }
+}
+
+/** "a list of an object with keys { column, type }" — what a nested-shape
+ *  setter actually expects, read off its own example payload. */
+function describeExpectedShape(deep) {
+  if (deep.kind === 'array') return `a list of ${describeExpectedShape(deep.of)}`;
+  if (deep.kind === 'object')
+    return `an object with keys { ${Object.keys(deep.fields).join(', ')} }`;
+  return describeKind(deep.kind);
+}
+
+/**
+ * Recursively checks an authored value node against the nested shape a
+ * setter's own example payload implies, at any depth. Only flags the two
+ * failure modes that actually corrupt a render — a list/object expected but
+ * a plain value given, or vice versa — never a scalar-subtype mismatch
+ * (a number written where the example happened to be a string still
+ * stringifies fine, so warning about it would be noise, not signal).
+ *
+ * @param {{kind, of?, fields?}} expected - from `entry.deepShape`, walked one field at a time
+ * @param {Object} node - the authored AST value node at this position
+ * @param {string} path - human-readable path built up as we recurse, e.g. 'columns[0].type'
+ * @param {number} fallbackLine - the nearest enclosing line, for scalar nodes that carry none
+ * @returns {Array<{path: string, line: number, message: string}>}
+ */
+function validateNestedValue(expected, node, path, fallbackLine) {
+  if (!expected || expected.kind === 'unknown') return [];
+  const line = node.line || fallbackLine;
+  const actual = astKind(node);
+  // An omitted/explicit-null value is never a shape violation — every setter
+  // already renders a missing field as a blank cell rather than throwing.
+  if (actual === 'null' || actual === 'unknown') return [];
+
+  if (expected.kind === 'array' || expected.kind === 'object') {
+    if (actual !== expected.kind) {
+      return [
+        {
+          path,
+          line,
+          message: `expected ${describeExpectedShape(expected)} but found ${describeKind(actual)}`,
+        },
+      ];
+    }
+    if (expected.kind === 'array') {
+      return node.items.flatMap((item, i) =>
+        validateNestedValue(expected.of, item, `${path}[${i}]`, line),
+      );
+    }
+    return node.fields.flatMap((field) => {
+      const sub = expected.fields[field.key];
+      return sub ? validateNestedValue(sub, field.value, `${path}.${field.key}`, line) : [];
+    });
+  }
+
+  // expected is a scalar: only a list or an object in its place is a real bug.
+  if (actual === 'array' || actual === 'object') {
+    return [{ path, line, message: `expected a plain value but found ${describeKind(actual)}` }];
+  }
+  return [];
+}
+
+/**
+ * Warns about nested-shape mismatches inside a `rows`-shaped setter's rows —
+ * a row field whose value doesn't match what that field is shaped like in
+ * the setter's own example. The row is still emitted as authored; a mismatch
+ * renders as a blank/placeholder cell rather than crashing, so this warns
+ * instead of dropping data the author might still want to see and fix.
+ */
+function validateRowsShape(entry, dataKey, rowsNode, warn) {
+  if (!rowsNode) return;
+  const itemShape = entry.deepShape.kind === 'array' ? entry.deepShape.of : null;
+  if (!itemShape || itemShape.kind !== 'object') return; // nothing concrete to check field values against
+  rowsNode.rows.forEach((row, rowIndex) => {
+    for (const field of row.fields) {
+      const sub = itemShape.fields[field.key];
+      if (!sub) continue;
+      for (const problem of validateNestedValue(sub, field.value, field.key, row.line)) {
+        warn(
+          `'${dataKey}[${rowIndex}].${problem.path}' (line ${problem.line}) ${problem.message} — ${entry.method} kept the value as written, but it will render as a blank or placeholder cell. Check ${entry.method}'s \`sectionGuide()\` example for the exact nested shape.`,
+        );
+      }
+    }
+  });
+}
+
+/** Same check as `validateRowsShape`, for an `object <name> { ... }` block. */
+function validateObjectShape(entry, objectNode, warn) {
+  const shape = entry.deepShape;
+  if (shape.kind !== 'object') return;
+  for (const field of objectNode.fields) {
+    const sub = shape.fields[field.key];
+    if (!sub) continue;
+    for (const problem of validateNestedValue(
+      sub,
+      field.value,
+      field.key,
+      field.line || objectNode.line,
+    )) {
+      warn(
+        `'${objectNode.name}.${problem.path}' (line ${problem.line}) ${problem.message} — ${entry.method} kept the value as written, but it will render as a blank or placeholder cell. Check ${entry.method}'s \`sectionGuide()\` example for the exact nested shape.`,
+      );
+    }
+  }
+}
+
 /**
  * Emits the setter calls for one Part's body.
  *
@@ -216,7 +370,9 @@ function emitPartBody(body, registry, receiver, pad) {
         wrongShape(node.name, entry, 'table rows', node.line);
         continue;
       }
-      emit(entry, rowsArrayLiteral(rowsForTable.get(node)));
+      const rowsNode = rowsForTable.get(node);
+      validateRowsShape(entry, node.name, rowsNode, warn);
+      emit(entry, rowsArrayLiteral(rowsNode));
     } else if (node.type === 'ObjectBlock') {
       const entry = registry.get(node.name);
       if (!entry) {
@@ -227,6 +383,7 @@ function emitPartBody(body, registry, receiver, pad) {
         wrongShape(node.name, entry, 'an object block', node.line);
         continue;
       }
+      validateObjectShape(entry, node, warn);
       emit(entry, objectLiteral(node.fields));
     } else if (node.type === 'List') {
       const entry = registry.get(node.name);

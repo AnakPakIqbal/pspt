@@ -44,7 +44,37 @@ function inferShape(example) {
 }
 
 /**
- * Builds `{ dataKey: { method, shape, example } }` for one SDK class.
+ * Recursively describes the *structure* of an example payload — not just the
+ * top-level 'rows'/'object'/... bucket `inferShape` gives, but what every
+ * field at every depth actually looks like. This is what lets the codegen
+ * validate a row or object field's value one or more levels deep: two
+ * `rows`-shaped setters can expect very different things inside each row
+ * (e.g. `setEntityDetails`'s `columns` field wants an array of
+ * `{column, type, constraints, description}` objects; `setTeam`'s `people`
+ * field wants an array of `{name, email}` objects), and this is what the
+ * checker in codegen.js compares an authored value against.
+ *
+ * @param {*} example
+ * @returns {{kind: 'string'|'number'|'boolean'|'object'|'array'|'unknown', of?, fields?}}
+ */
+function describeShape(example) {
+  if (example == null) return { kind: 'unknown' };
+  if (Array.isArray(example)) {
+    if (!example.length) return { kind: 'array', of: { kind: 'unknown' } };
+    return { kind: 'array', of: describeShape(example[0]) };
+  }
+  const t = typeof example;
+  if (t === 'string' || t === 'number' || t === 'boolean') return { kind: t };
+  if (t === 'object') {
+    const fields = {};
+    for (const [key, value] of Object.entries(example)) fields[key] = describeShape(value);
+    return { kind: 'object', fields };
+  }
+  return { kind: 'unknown' };
+}
+
+/**
+ * Builds `{ dataKey: { method, shape, deepShape, example } }` for one SDK class.
  * @param {Function} SDK - a class exposing `static sectionGuide()`
  */
 function setterRegistry(SDK) {
@@ -54,6 +84,7 @@ function setterRegistry(SDK) {
     registry.set(methodToDataKey(entry.method), {
       method: entry.method,
       shape: inferShape(entry.example),
+      deepShape: describeShape(entry.example),
       example: entry.example,
     });
   }
@@ -130,4 +161,12 @@ function suggest(name, candidates) {
   return bestScore <= Math.max(2, Math.floor(lower.length / 3)) ? best : null;
 }
 
-module.exports = { PART_TYPES, DOC_TYPES, setterRegistry, methodToDataKey, inferShape, suggest };
+module.exports = {
+  PART_TYPES,
+  DOC_TYPES,
+  setterRegistry,
+  methodToDataKey,
+  inferShape,
+  describeShape,
+  suggest,
+};

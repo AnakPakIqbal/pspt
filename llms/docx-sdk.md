@@ -128,9 +128,9 @@ Front matter for the whole document: the cover identity table, the team and thei
 
 | Setter | Data key | Shape | Payload | Purpose |
 | --- | --- | --- | --- | --- |
-| `setCoverInfo` | `coverInfo` | object | `{ productName, productType, applicationEngineer, productLead, status, writer, checker, approver, lastUpdate, latestHistory }` | Cover-page identity table: application name, product type, application engineer, product lead/manager, status, writer, checker, approver, last-update date, latest history note. |
+| `setCoverInfo` | `coverInfo` | object | `{ productName, productType, applicationEngineer, productLead, status, writer, checker: { name, email }, approver: { name, email }, lastUpdate, latestHistory }` | Cover-page identity table: application name, product type, application engineer, product lead/manager, status, writer, checker, approver, last-update date, latest history note. |
 | `setDocumentTitle` | `documentTitle` | object | `{ title, tagline }` | Overrides the big cover title and italic tagline underneath it. |
-| `setTeam` | `team` | rows | `{ role, people: […], roleType, responsibilities: […] }[]` | "1. Team" table: who holds each role, their name(s) (optionally linked to email), the PIC role (Maker/Checker/Approver), and a numbered list of what they do in this process. |
+| `setTeam` | `team` | rows | `{ role, people: { name, email }[], roleType, responsibilities: { title, highlight, children: […] }[] }[]` | "1. Team" table: who holds each role, their name(s) (optionally linked to email), the PIC role (Maker/Checker/Approver), and a numbered list of what they do in this process. |
 | `setPicMatrix` | `picMatrix` | rows | `{ docType, maker, checker, approver }[]` | "2. PIC Matrix" table: for each document type, who is the Maker/Checker/Approver. If not called, the template's default 13-row matrix (Style Guide through Appendices) is used verbatim. |
 | `setStorageGuide` | `storageGuide` | rows | `{ category, process }[]` | "3. Where and How to Store the Documentation" table: category + standard/process pairs. If not called, the template's default 6-row guide is used verbatim. |
 | `setHeaderFooterLabels` | `headerFooterLabels` | object | `{ productNameLabel, docTypeLabel, companyLabel, teamLabel }` | Overrides the running header ("Product Name" / "Documentation SOP \| Confidential") and footer ("PointStar / Product Team"). |
@@ -205,7 +205,7 @@ Business Requirements. The largest Part. Business-language requirements (BR-xxx)
 | `setBusinessRequirements` | `businessRequirements` | rows | `{ id, requirement, objective, priority }[]` | Section 5 ID/Requirement/Objective/Priority table. |
 | `setProcessOverview` | `processOverview` | scalar | `string` | Section 6.1 process description. |
 | `setProcessScope` | `processScope` | scalar | `string` | Section 6.2 process boundaries. |
-| `setRaci` | `raci` | object | `{ roles: […], steps: […] }` | Section 6.3 RACI table. |
+| `setRaci` | `raci` | object | `{ roles: string[], steps: { step, values: string[] }[] }` | Section 6.3 RACI table. |
 | `setExceptions` | `exceptions` | stringList | `string[]` | Section 6.5 bulleted exceptions/edge cases. |
 | `setActors` | `actors` | rows | `{ actor, description }[]` | Section 7.1 Actor/Description table. |
 | `setUseCaseList` | `useCaseList` | rows | `{ id, name, actor, description }[]` | Section 7.3 ID/Name/Actor/Description table. |
@@ -237,7 +237,7 @@ Product Requirements. Personas, MoSCoW-prioritised features (which the SRS turns
 | `setTargetAudience` | `targetAudience` | rows | `{ persona, needs, painPoints }[]` | Section 2 Persona/Needs/Pain Points table. |
 | `setRequirements` | `requirements` | rows | `{ id, feature, description, priority, status }[]` | Section 3 ID/Feature/Description/Priority/Status table. |
 | `setNfrNotes` | `nfrNotes` | stringList | `string[]` | Section 3.1 bulleted NFR category notes. |
-| `setUserStories` | `userStories` | rows | `{ story, bullets: […] }[]` | Section 4 story blocks. |
+| `setUserStories` | `userStories` | rows | `{ story, bullets: string[] }[]` | Section 4 story blocks. |
 | `setDesignUx` | `designUx` | stringList | `string[]` | Section 5 bulleted design links. |
 | `setTechnicalConsiderations` | `technicalConsiderations` | stringList | `string[]` | Section 6 bulleted technical notes. |
 | `setSuccessMetrics` | `successMetrics` | rows | `{ metric, baseline, target, owner }[]` | Section 7 Metric/Baseline/Target/Owner table. |
@@ -323,7 +323,7 @@ Three mini-documents in one Part, generated back to back: **Technical Documentat
 | `setErdOverview` | `erdOverview` | scalar | `string` | ERD §1 data domain/engine. |
 | `setEntityList` | `entityList` | rows | `{ entity, description }[]` | ERD §2 Entity/Description table. |
 | `setErdDiagramNote` | `erdDiagramNote` | scalar | `string` | ERD §3 diagram placeholder note. |
-| `setEntityDetails` | `entityDetails` | rows | `{ tableName, columns: […] }[]` | ERD §4 per-entity column tables. |
+| `setEntityDetails` | `entityDetails` | rows | `{ tableName, columns: { column, type, constraints, description }[] }[]` | ERD §4 per-entity column tables. |
 | `setRelationships` | `relationships` | rows | `{ from, to, cardinality, rule }[]` | ERD §5 From/To/Cardinality/Rule table. |
 | `setNormalisationNotes` | `normalisationNotes` | scalar | `string` | ERD §6 note. |
 | `setIndexingStrategy` | `indexingStrategy` | rows | `{ table, index, reason }[]` | ERD §7 Table/Index/Reason table. |
@@ -335,7 +335,7 @@ Three mini-documents in one Part, generated back to back: **Technical Documentat
 | `setApiRolesNote` | `apiRolesNote` | scalar | `string` | API §3 roles note. |
 | `setApiResponseFormat` | `apiResponseFormat` | stringList | `string[]` | API §4 response format JSON lines. |
 | `setApiErrorCodes` | `apiErrorCodes` | rows | `{ status, meaning }[]` | API §4 Status/Meaning table. |
-| `setEndpoints` | `endpoints` | rows | `{ method, path, description, requestBody: […], responseBody: […], errors }[]` | API §5 endpoint blocks. |
+| `setEndpoints` | `endpoints` | rows | `{ method, path, description, requestBody: [], responseBody: string[], errors }[]` | API §5 endpoint blocks. |
 | `setPaginationNote` | `paginationNote` | scalar | `string` | API §6 pagination note. |
 | `setRateLimiting` | `rateLimiting` | rows | `{ limit, window, header }[]` | API §7 Limit/Window/Header table. |
 | `setApiChangelog` | `apiChangelog` | rows | `{ version, date, change }[]` | API §8 Version/Date/Change table. |
@@ -451,7 +451,7 @@ Written for the end user in plain language: getting started, navigation, one wal
 | `setGettingStartedScreenshot` | `gettingStartedScreenshot` | scalar | `string` | Section 2 screenshot caption. |
 | `setNavigating` | `navigating` | scalar | `string` | Section 3 layout orientation paragraph. |
 | `setNavigatingScreenshot` | `navigatingScreenshot` | scalar | `string` | Section 3 screenshot caption. |
-| `setFeatureWalkthroughs` | `featureWalkthroughs` | rows | `{ taskTitle, steps: […], screenshot }[]` | Section 4 repeatable "How to [Task]" blocks with numbered steps and an optional screenshot line. |
+| `setFeatureWalkthroughs` | `featureWalkthroughs` | rows | `{ taskTitle, steps: string[], screenshot }[]` | Section 4 repeatable "How to [Task]" blocks with numbered steps and an optional screenshot line. |
 | `setFaq` | `faq` | scalar | `string` | Section 5 FAQ paragraph (Q:/A: format). |
 | `setTroubleshooting` | `troubleshooting` | rows | `{ problem, solution }[]` | Section 6 Problem/Solution table. |
 | `setSupportContact` | `supportContact` | scalar | `string` | Section 7 support contact paragraph. |
@@ -473,7 +473,7 @@ Semantic-versioned release history with tagged entries (ADDED / CHANGED / FIXED 
 | `setHeaderFooterLabels` | `headerFooterLabels` | object | `{ productNameLabel }` | Overrides the running header product name label. |
 | `setMetadata` | `metadata` | object | `{ writer, status, version, lastUpdate }` | Writer/Status/Version/Last Update metadata table. |
 | `setUnreleased` | `unreleased` | stringList | `string[]` | Section 3 bulleted unreleased changes. |
-| `setReleases` | `releases` | rows | `{ heading, entries: […] }[]` | Repeatable version blocks (newest first). Each has a heading and TAG — description bullets. |
+| `setReleases` | `releases` | rows | `{ heading, entries: string[] }[]` | Repeatable version blocks (newest first). Each has a heading and TAG — description bullets. |
 
 `.pspt` forms for this Part:
 

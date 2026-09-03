@@ -206,6 +206,38 @@ rows entityDetails [
 
 Both forms nest arbitrarily.
 
+**The compiler checks these nested values, not just whether the field/table
+name matches a setter.** Matching a name only proves the _top-level_ construct
+is right — `table`+`rows` for a rows setter, `object` for an object setter.
+What's _inside_ a row or object field can still be shaped wrong one or more
+levels down: `setEntityDetails`' `columns` field wants a list of
+`{column, type, constraints, description}` objects, and giving it a list of
+plain strings used to compile clean and render blank cells with no warning
+anywhere. It doesn't any more:
+
+```
+rows entityDetails [
+  { tableName: "users", columns: [ "id: uuid, PK", "email: string" ] }
+]
+```
+
+```
+// WARNING: 'entityDetails[0].columns[0]' (line 2) expected an object with
+// keys { column, type, constraints, description } but found a string —
+// setEntityDetails kept the value as written, but it will render as a blank
+// or placeholder cell. Check setEntityDetails's `sectionGuide()` example for
+// the exact nested shape.
+```
+
+The value is still emitted exactly as written — a shape mismatch warns, it
+never silently drops content — so the row is there to fix once you've read
+the warning. The check only flags a list/object given where a plain value was
+expected, or vice versa; it never complains about a number where the example
+happened to be a string, since that still renders fine. If you'd rather see
+the expected shape before you write the row, `docx-sdk.md`'s setter tables
+show it inline (`columns: { column, type, constraints, description }[]`), or
+call `SDK.sectionGuide()` directly for the setter's own example payload.
+
 ### Authoring the whole master document
 
 In a `type=master` file, wrap each Part's content in a `part <key> { ... }`

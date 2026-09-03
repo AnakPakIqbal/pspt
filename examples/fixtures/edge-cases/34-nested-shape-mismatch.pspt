@@ -1,0 +1,27 @@
+// A row/object field's value can match the setter's top-level shape (a rows
+// setter given rows, an object setter given an object block) while still
+// being wrong one level deeper — a list of strings where the setter expects
+// a list of objects. Matching the field *name* against a setter says nothing
+// about whether what's inside it is shaped correctly; this used to compile
+// clean and render blank cells with zero signal. This should warn, naming
+// the exact field, line, and expected shape — and still emit the value as
+// written rather than dropping it. A correctly-shaped row alongside it must
+// stay silent: this isn't "nested values are suspicious", only genuine
+// shape mismatches.
+doc "Nested Shape Mismatch" type=techDoc
+
+section api {
+  table entityDetails {
+    tableName: "Table" w1
+  }
+  rows entityDetails [
+    {
+      tableName: "users",
+      columns: [ "id: uuid, PK", "email: string, unique" ]
+    },
+    {
+      tableName: "sessions",
+      columns: [ { column: "id", type: "uuid", constraints: "PK", description: "Session id" } ]
+    }
+  ]
+}

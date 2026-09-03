@@ -65,17 +65,27 @@ const DSL_FORM = {
 };
 
 /** A compact, single-line rendering of an example payload. */
+// Deep enough to reveal a nested field's own object keys (e.g. `columns` in
+// setEntityDetails' `{tableName, columns: [{column, type, ...}]}` example) —
+// this used to collapse at depth 1, so docx-sdk.md said `columns: […]` and
+// never told a reader those items had to be objects, not strings.
+const MAX_SHAPE_DEPTH = 3;
+
 function shapeOf(example) {
   const render = (value, depth) => {
     if (value === null || value === undefined) return 'null';
     if (Array.isArray(value)) {
       if (!value.length) return '[]';
-      return depth > 1 ? '[…]' : `${render(value[0], depth + 1)}[]`;
+      return depth > MAX_SHAPE_DEPTH ? '[…]' : `${render(value[0], depth + 1)}[]`;
     }
     if (typeof value === 'object') {
+      if (depth > MAX_SHAPE_DEPTH) return '{…}';
       const keys = Object.keys(value);
-      if (depth > 1) return '{…}';
-      const rendered = keys.map((key) => (Array.isArray(value[key]) ? key + ': […]' : key));
+      const rendered = keys.map((key) => {
+        const nested = value[key];
+        const isNested = Array.isArray(nested) || (nested && typeof nested === 'object');
+        return isNested ? `${key}: ${render(nested, depth + 1)}` : key;
+      });
       return `{ ${rendered.join(', ')} }`;
     }
     return typeof value;
